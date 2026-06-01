@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Mini Trello App
 
 A small full-stack Trello-style board starter with a React/Vite frontend and an Express backend.
@@ -49,3 +50,6 @@ VITE_API_BASE_URL=http://localhost:4000/api npm run dev
 - `POST /api/board/columns/:columnId/cards` - add a card to a column.
 - `PATCH /api/board/cards/:cardId/move` - move a card to another column.
 - `POST /api/board/reset` - reset the in-memory board.
+=======
+# mini-trello-app
+>>>>>>> 49f15cfb7a6347acf450c6186660af1b98ce492f
