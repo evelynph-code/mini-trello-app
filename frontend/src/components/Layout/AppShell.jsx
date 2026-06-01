@@ -15,6 +15,7 @@ export function AppShell({
         </div>
         <nav className="side-nav" aria-label="Primary">
           <a href="#overview">Overview</a>
+          <a href="#boards">Boards</a>
           <a href="#cards">Cards</a>
           <a href="#profile">Profile</a>
           <a href="#activity">Activity</a>

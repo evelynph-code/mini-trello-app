@@ -72,8 +72,14 @@ Restart the backend after changing OAuth environment variables.
 - `GET /api/auth/github` - start GitHub OAuth login.
 - `GET /api/auth/github/callback` - handle GitHub OAuth callback.
 - `POST /api/auth/logout` - clear the local session.
-- `GET /api/board` - fetch the demo board.
-- `POST /api/board/columns/:columnId/cards` - add a card to a column.
-- `PATCH /api/board/cards/:cardId/move` - move a card to another column.
-- `POST /api/board/reset` - reset the in-memory board.
-# mini-trello-app
+- `GET /api/boards` - list Firestore boards owned by the authenticated user.
+- `POST /api/boards` - create a Firestore board.
+- `GET /api/boards/:id` - fetch one owned Firestore board.
+- `PUT /api/boards/:id` - update one owned Firestore board.
+- `DELETE /api/boards/:id` - delete one owned Firestore board.
+- `GET /api/cards` - list cards assigned to the authenticated user across boards.
+- `GET /api/boards/:boardId/cards` - list cards in one owned board.
+- `POST /api/boards/:boardId/cards` - create a card in one owned board.
+- `GET /api/boards/:boardId/cards/:id` - fetch one board card.
+- `PUT /api/boards/:boardId/cards/:id` - update one board card.
+- `DELETE /api/boards/:boardId/cards/:id` - delete one board card.

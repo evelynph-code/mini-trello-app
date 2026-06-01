@@ -1,105 +1,23 @@
-import { useEffect, useState } from 'react'
-import { Board } from '../components/Board/Board'
-import { boardApi } from '../services/boardApi'
-
-const countCards = (columns) =>
-  columns.reduce((total, column) => total + column.cards.length, 0)
-
-const getAssignedCards = (columns, userId) =>
-  columns.flatMap((column) =>
-    column.cards
-      .filter((card) => card.assigneeId === userId)
-      .map((card) => ({ ...card, columnTitle: column.title })),
-  )
+import { useCallback, useState } from 'react'
+import { BoardManager } from '../components/Boards/BoardManager'
+import { CardManager } from '../components/Cards/CardManager'
 
 export function BoardPage({ currentUser, isAuthenticated }) {
-  const [board, setBoard] = useState(null)
-  const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
+  const [boards, setBoards] = useState([])
+  const [selectedBoardId, setSelectedBoardId] = useState('')
 
-  const loadBoard = async () => {
-    setIsLoading(true)
-    setError('')
+  const selectedBoard = boards.find((board) => board.id === selectedBoardId) || null
 
-    try {
-      setBoard(await boardApi.getBoard())
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setIsLoading(false)
+  const handleBoardsLoaded = useCallback((nextBoards) => {
+    setBoards(nextBoards)
+
+    if (!selectedBoardId && nextBoards.length > 0) {
+      setSelectedBoardId(nextBoards[0].id)
     }
-  }
-
-  useEffect(() => {
-    let isMounted = true
-
-    boardApi
-      .getBoard()
-      .then((data) => {
-        if (isMounted) {
-          setBoard(data)
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setError(err.message)
-        }
-      })
-      .finally(() => {
-        if (isMounted) {
-          setIsLoading(false)
-        }
-      })
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
-
-  const handleCreateCard = async (columnId, card) => {
-    try {
-      await boardApi.createCard(columnId, card)
-      await loadBoard()
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
-  const handleMoveCard = async (cardId, targetColumnId) => {
-    try {
-      setBoard(await boardApi.moveCard(cardId, targetColumnId))
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
-  const handleReset = async () => {
-    try {
-      setBoard(await boardApi.resetBoard())
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
-  if (isLoading) {
-    return <p className="status-message">Loading board...</p>
-  }
-
-  if (!board) {
-    return (
-      <section className="status-panel">
-        <h2>Board unavailable</h2>
-        <p>{error || 'Start the backend API, then refresh the app.'}</p>
-        <button type="button" onClick={loadBoard}>
-          Retry
-        </button>
-      </section>
-    )
-  }
+  }, [selectedBoardId])
 
   return (
     <main className="dashboard-grid">
-      {error ? <p className="error-message">{error}</p> : null}
       <section id="overview" className="overview-panel" aria-labelledby="overview-title">
         <div>
           <p className="eyebrow">Overview</p>
@@ -108,22 +26,22 @@ export function BoardPage({ currentUser, isAuthenticated }) {
           </h2>
           <p>
             {isAuthenticated
-              ? 'Your assigned work and team progress are ready.'
-              : 'Sign in to see assigned cards, profile details, and private activity.'}
+              ? 'Create boards, open one, then add cards to its lists.'
+              : 'Sign in to create boards and manage Trello-style cards.'}
           </p>
         </div>
         <div className="stat-grid" aria-label="Board statistics">
           <div>
-            <strong>{board.columns.length}</strong>
+            <strong>{boards.length}</strong>
+            <span>Boards</span>
+          </div>
+          <div>
+            <strong>{selectedBoard?.lists.length || 0}</strong>
             <span>Lists</span>
           </div>
           <div>
-            <strong>{countCards(board.columns)}</strong>
-            <span>Cards</span>
-          </div>
-          <div>
-            <strong>{board.members.length}</strong>
-            <span>Members</span>
+            <strong>{selectedBoard ? 1 : 0}</strong>
+            <span>Open</span>
           </div>
         </div>
       </section>
@@ -146,7 +64,7 @@ export function BoardPage({ currentUser, isAuthenticated }) {
               </div>
               <div>
                 <dt>Workspace</dt>
-                <dd>{board.title}</dd>
+                <dd>{selectedBoard?.name || 'No board open'}</dd>
               </div>
             </dl>
           </>
@@ -158,39 +76,24 @@ export function BoardPage({ currentUser, isAuthenticated }) {
         )}
       </aside>
 
-      <section className="assigned-panel" aria-labelledby="assigned-title">
-        <p className="eyebrow">My cards</p>
-        <h2 id="assigned-title">
-          {isAuthenticated ? 'Assigned to you' : 'Sign in required'}
-        </h2>
-        {isAuthenticated ? (
-          <div className="assigned-list">
-            {getAssignedCards(board.columns, currentUser.id).map((card) => (
-              <article key={card.id}>
-                <span>{card.columnTitle}</span>
-                <strong>{card.title}</strong>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <p>Authentication controls which user-specific cards render here.</p>
-        )}
-      </section>
-
-      <Board
-        board={board}
-        onCreateCard={handleCreateCard}
-        onMoveCard={handleMoveCard}
+      <BoardManager
+        isAuthenticated={isAuthenticated}
+        onBoardsLoaded={handleBoardsLoaded}
+        onSelectBoard={setSelectedBoardId}
+        selectedBoardId={selectedBoardId}
+      />
+      <CardManager
+        boards={boards}
+        isAuthenticated={isAuthenticated}
+        onSelectBoard={setSelectedBoardId}
+        selectedBoard={selectedBoard}
       />
       <section id="activity" className="activity-bar">
         <p>
           {isAuthenticated
-            ? `${currentUser.name} is viewing ${countCards(board.columns)} tracked cards`
-            : `${countCards(board.columns)} public cards tracked`}
+            ? `${currentUser.name} is managing ${boards.length} board${boards.length === 1 ? '' : 's'}`
+            : 'Sign in to manage boards and cards'}
         </p>
-        <button type="button" onClick={handleReset}>
-          Reset demo board
-        </button>
       </section>
     </main>
   )

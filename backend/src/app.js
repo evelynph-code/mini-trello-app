@@ -4,7 +4,9 @@ const { env } = require('./config/env')
 const { errorHandler } = require('./middleware/errorHandler')
 const { notFound } = require('./middleware/notFound')
 const authRoutes = require('./routes/authRoutes')
-const boardRoutes = require('./routes/boardRoutes')
+const boardCardRoutes = require('./routes/boardCardRoutes')
+const boardsRoutes = require('./routes/boardsRoutes')
+const cardRoutes = require('./routes/cardRoutes')
 
 const app = express()
 
@@ -21,7 +23,9 @@ app.get('/api/health', (_req, res) => {
 })
 
 app.use('/api/auth', authRoutes)
-app.use('/api/board', boardRoutes)
+app.use('/api/boards/:boardId/cards', boardCardRoutes)
+app.use('/api/boards', boardsRoutes)
+app.use('/api/cards', cardRoutes)
 
 app.use(notFound)
 app.use(errorHandler)

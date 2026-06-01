@@ -112,7 +112,7 @@ button:disabled {
   grid-template-areas:
     'overview profile'
     'assigned profile'
-    'board board'
+    'boards boards'
     'activity activity';
   gap: 18px;
   padding: 28px clamp(16px, 4vw, 40px) 36px;
@@ -130,6 +130,7 @@ button:disabled {
 .overview-panel,
 .profile-panel,
 .assigned-panel,
+.boards-panel,
 .activity-bar {
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -221,6 +222,13 @@ button:disabled {
   padding: 20px;
 }
 
+.boards-panel {
+  grid-area: boards;
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+
 .assigned-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -247,6 +255,176 @@ button:disabled {
 .assigned-list strong {
   color: var(--text-strong);
   font-size: 14px;
+}
+
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+}
+
+.panel-heading span {
+  border-radius: 999px;
+  background: #f0f7ff;
+  color: #246a96;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 8px;
+}
+
+.card-manager {
+  display: grid;
+  gap: 14px;
+}
+
+.card-form {
+  display: grid;
+  gap: 8px;
+}
+
+.form-actions,
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.card-listing {
+  grid-template-columns: 1fr;
+}
+
+.list-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 10px;
+  overflow-x: auto;
+}
+
+.list-column {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 180px;
+  border: 1px solid #d8e0ea;
+  border-radius: 8px;
+  background: #edf2f7;
+  padding: 10px;
+}
+
+.list-column h3 {
+  font-size: 14px;
+  margin: 0;
+}
+
+.card-listing article p {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.card-details {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.card-details h3 {
+  margin: 4px 0 10px;
+}
+
+.card-details dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.card-details dl div {
+  display: grid;
+  gap: 2px;
+}
+
+.card-details dt {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.card-details dd {
+  margin: 0;
+  color: var(--text-strong);
+}
+
+.inline-error {
+  border: 1px solid #f0b5b5;
+  border-radius: 8px;
+  background: #fff4f4;
+  color: #9f3333;
+  padding: 10px;
+}
+
+.board-manager-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1.2fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.board-form {
+  display: grid;
+  gap: 8px;
+}
+
+.board-list {
+  display: grid;
+  gap: 10px;
+}
+
+.board-list article {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #dfe6ef;
+  border-radius: 8px;
+  background: #fbfdff;
+  padding: 12px;
+}
+
+.board-list strong {
+  color: var(--text-strong);
+}
+
+.board-list p {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.board-details {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.board-details h3 {
+  margin: 4px 0 10px;
+}
+
+.board-details dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.board-details dl div {
+  display: grid;
+  gap: 2px;
+}
+
+.board-details dt {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.board-details dd {
+  margin: 0;
+  color: var(--text-strong);
 }
 
 .board-page {
@@ -368,7 +546,8 @@ button:disabled {
 }
 
 select,
-input {
+input,
+textarea {
   width: 100%;
   min-height: 38px;
   border-radius: 6px;
@@ -378,6 +557,11 @@ input {
   font: inherit;
   font-size: 14px;
   padding: 8px 10px;
+}
+
+textarea {
+  min-height: 84px;
+  resize: vertical;
 }
 
 .card-composer {
@@ -435,7 +619,7 @@ input {
   }
 
   .side-nav {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .dashboard-grid {
@@ -444,7 +628,7 @@ input {
       'overview'
       'profile'
       'assigned'
-      'board'
+      'boards'
       'activity';
   }
 
@@ -462,8 +646,14 @@ input {
 
   .side-nav,
   .stat-grid,
-  .assigned-list {
+  .assigned-list,
+  .board-manager-grid,
+  .list-board {
     grid-template-columns: 1fr;
+  }
+
+  .board-list article {
+    flex-direction: column;
   }
 
   .board-intro,
