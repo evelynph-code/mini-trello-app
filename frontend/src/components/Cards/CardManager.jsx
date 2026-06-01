@@ -8,13 +8,19 @@ const emptyForm = {
   title: '',
 }
 
-export function CardManager({ boards, isAuthenticated, selectedBoard, onSelectBoard }) {
+export function CardManager({
+  boards,
+  isAuthenticated,
+  selectedBoard,
+  onSelectBoard,
+}) {
   const [cards, setCards] = useState([])
   const [detailsCard, setDetailsCard] = useState(null)
   const [error, setError] = useState('')
   const [form, setForm] = useState(emptyForm)
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isComposerOpen, setIsComposerOpen] = useState(false)
   const [selectedCardId, setSelectedCardId] = useState('')
 
   const loadCards = async () => {
@@ -115,6 +121,7 @@ export function CardManager({ boards, isAuthenticated, selectedBoard, onSelectBo
       }
 
       resetForm()
+      setIsComposerOpen(false)
       await loadCards()
     } catch (err) {
       setError(err.message)
@@ -137,6 +144,7 @@ export function CardManager({ boards, isAuthenticated, selectedBoard, onSelectBo
       listId: card.listId || 'backlog',
       title: card.title,
     })
+    setIsComposerOpen(true)
     setIsEditing(true)
     setSelectedCardId(card.id)
   }
@@ -153,87 +161,96 @@ export function CardManager({ boards, isAuthenticated, selectedBoard, onSelectBo
   }
 
   return (
-    <section className="assigned-panel card-manager" aria-labelledby="assigned-title">
-      <div className="panel-heading">
+    <section className="board-workspace" aria-labelledby="assigned-title">
+      <div className="board-header">
         <div>
-          <p className="eyebrow">My cards</p>
+          <p className="eyebrow">Workspace</p>
           <h2 id="assigned-title">
-            {isAuthenticated ? 'Board cards' : 'Sign in required'}
+            {selectedBoard ? selectedBoard.name : 'No board open'}
           </h2>
+          {selectedBoard ? <p>{selectedBoard.description || 'Cards live inside this board.'}</p> : null}
         </div>
-        {isAuthenticated ? <span>{cards.length} cards</span> : null}
+        {isAuthenticated && selectedBoard ? (
+          <button type="button" onClick={() => setIsComposerOpen((value) => !value)}>
+            {isComposerOpen ? 'Close composer' : 'Create card'}
+          </button>
+        ) : null}
       </div>
 
       {!isAuthenticated ? (
         <p>Sign in with GitHub to list, create, edit, and delete board cards.</p>
       ) : !selectedBoard ? (
-        <p>Create or open a board before adding cards.</p>
+        <div className="empty-board-state">
+          <h3>Create or open a board</h3>
+          <p>Use the switch board bar above to choose a board or create a new one.</p>
+        </div>
       ) : (
         <>
-          <p className="selected-board-label">Open board: {selectedBoard.name}</p>
           {error ? <p className="inline-error">{error}</p> : null}
-          <form className="card-form" onSubmit={handleSubmit}>
-            {boards.length > 0 ? (
-              <select
-                aria-label="Board"
-                value={selectedBoard.id}
-                onChange={(event) => {
-                  const nextBoard = boards.find((board) => board.id === event.target.value)
+          {isComposerOpen ? (
+            <form className="card-form card-composer-panel" onSubmit={handleSubmit}>
+              {boards.length > 0 ? (
+                <select
+                  aria-label="Board"
+                  value={selectedBoard.id}
+                  onChange={(event) => {
+                    const nextBoard = boards.find((board) => board.id === event.target.value)
 
-                  if (nextBoard) {
-                    onSelectBoard(nextBoard.id)
-                  }
-                }}
+                    if (nextBoard) {
+                      onSelectBoard(nextBoard.id)
+                    }
+                  }}
+                >
+                  {boards.map((board) => (
+                    <option key={board.id} value={board.id}>
+                      {board.name}
+                    </option>
+                  ))}
+                </select>
+              ) : null}
+              <input
+                aria-label="Card title"
+                name="title"
+                placeholder="Card title"
+                value={form.title}
+                onChange={handleChange}
+              />
+              <input
+                aria-label="Card label"
+                name="label"
+                placeholder="Label"
+                value={form.label}
+                onChange={handleChange}
+              />
+              <select
+                aria-label="List"
+                name="listId"
+                value={form.listId}
+                onChange={handleChange}
               >
-                {boards.map((board) => (
-                  <option key={board.id} value={board.id}>
-                    {board.name}
+                {selectedBoard.lists.map((list) => (
+                  <option key={list.id} value={list.id}>
+                    {list.name}
                   </option>
                 ))}
               </select>
-            ) : null}
-            <input
-              aria-label="Card title"
-              name="title"
-              placeholder="Card title"
-              value={form.title}
-              onChange={handleChange}
-            />
-            <input
-              aria-label="Card label"
-              name="label"
-              placeholder="Label"
-              value={form.label}
-              onChange={handleChange}
-            />
-            <select
-              aria-label="List"
-              name="listId"
-              value={form.listId}
-              onChange={handleChange}
-            >
-              {selectedBoard.lists.map((list) => (
-                <option key={list.id} value={list.id}>
-                  {list.name}
-                </option>
-              ))}
-            </select>
-            <textarea
-              aria-label="Card description"
-              name="description"
-              placeholder="Description"
-              value={form.description}
-              onChange={handleChange}
-            />
-            <div className="form-actions">
-              <button type="submit">{isEditing ? 'Save card' : 'Create card'}</button>
-              {isEditing ? (
-                <button type="button" onClick={resetForm}>
-                  Cancel
-                </button>
-              ) : null}
-            </div>
-          </form>
+              <textarea
+                aria-label="Card description"
+                name="description"
+                placeholder="Description"
+                value={form.description}
+                onChange={handleChange}
+              />
+              <div className="form-actions">
+                <button type="submit">{isEditing ? 'Save card' : 'Create card'}</button>
+                {isEditing ? (
+                  <button type="button" onClick={resetForm}>
+                    Cancel
+                  </button>
+                ) : null}
+              </div>
+            </form>
+          ) : null}
 
           <div className="assigned-list card-listing" aria-live="polite">
             {isLoading ? <p>Loading cards...</p> : null}

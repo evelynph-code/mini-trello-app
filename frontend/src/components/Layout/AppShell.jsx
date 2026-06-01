@@ -4,21 +4,32 @@ export function AppShell({
   currentUser,
   isAuthenticated,
   isSignInDisabled,
+  activePage,
+  onNavigate,
   onToggleAuth,
 }) {
   return (
     <div className="app-shell">
-      <aside className="sidebar" aria-label="Application navigation">
-        <div>
+      <header className="topbar" aria-label="Application navigation">
+        <div className="brand-block">
           <p className="eyebrow">Mini Trello</p>
           <h1>Dashboard</h1>
         </div>
         <nav className="side-nav" aria-label="Primary">
-          <a href="#overview">Overview</a>
-          <a href="#boards">Boards</a>
-          <a href="#cards">Cards</a>
-          <a href="#profile">Profile</a>
-          <a href="#activity">Activity</a>
+          <button
+            type="button"
+            className={activePage === 'dashboard' ? 'active' : ''}
+            onClick={() => onNavigate('dashboard')}
+          >
+            Dashboard
+          </button>
+          <button
+            type="button"
+            className={activePage === 'settings' ? 'active' : ''}
+            onClick={() => onNavigate('settings')}
+          >
+            Settings
+          </button>
         </nav>
         <div className="auth-panel">
           {isAuthenticated ? (
@@ -37,7 +48,7 @@ export function AppShell({
             {isAuthenticated ? 'Sign out' : 'Sign in with GitHub'}
           </button>
         </div>
-      </aside>
+      </header>
       <div className="dashboard-shell">{children}</div>
     </div>
   )

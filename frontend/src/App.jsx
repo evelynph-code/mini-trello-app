@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { AppShell } from './components/Layout/AppShell'
 import { BoardPage } from './pages/BoardPage'
+import { SettingsPage } from './pages/SettingsPage'
 import { authApi } from './services/authApi'
 import './App.css'
 
 function App() {
+  const [activePage, setActivePage] = useState('dashboard')
   const [currentUser, setCurrentUser] = useState(null)
   const [authError, setAuthError] = useState('')
   const isAuthenticated = Boolean(currentUser)
@@ -62,9 +64,15 @@ function App() {
       currentUser={currentUser}
       isAuthenticated={isAuthenticated}
       isSignInDisabled={false}
+      activePage={activePage}
+      onNavigate={setActivePage}
       onToggleAuth={handleToggleAuth}
     >
-      <BoardPage currentUser={currentUser} isAuthenticated={isAuthenticated} />
+      {activePage === 'settings' ? (
+        <SettingsPage currentUser={currentUser} isAuthenticated={isAuthenticated} />
+      ) : (
+        <BoardPage isAuthenticated={isAuthenticated} />
+      )}
     </AppShell>
   )
 }

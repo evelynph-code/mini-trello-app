@@ -1,32 +1,34 @@
 .app-shell {
-  display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
+  display: block;
   min-height: 100svh;
   background: #f7f9fc;
 }
 
-.sidebar {
+.topbar {
   position: sticky;
   top: 0;
-  align-self: start;
+  z-index: 20;
   display: grid;
-  gap: 28px;
-  min-height: 100svh;
-  padding: 28px 20px;
-  border-right: 1px solid var(--border);
+  grid-template-columns: minmax(180px, 1fr) auto minmax(220px, 1fr);
+  gap: 16px;
+  align-items: center;
+  min-height: 72px;
+  padding: 12px clamp(16px, 4vw, 32px);
+  border-bottom: 1px solid var(--border);
   background: #ffffff;
 }
 
-.sidebar h1 {
+.topbar h1 {
   margin: 6px 0 0;
 }
 
 .side-nav {
-  display: grid;
+  display: flex;
   gap: 8px;
 }
 
 .side-nav a,
+.side-nav button,
 button {
   min-height: 38px;
   border-radius: 6px;
@@ -46,16 +48,22 @@ button {
 }
 
 .side-nav a:hover,
+.side-nav button:hover,
 button:hover {
   border-color: #8da2bd;
 }
 
+.side-nav .active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
 .auth-panel {
-  align-self: end;
-  display: grid;
+  display: flex;
+  justify-content: end;
+  align-items: center;
   gap: 12px;
-  border-top: 1px solid var(--border);
-  padding-top: 16px;
 }
 
 .signed-in-user,
@@ -106,16 +114,11 @@ button:disabled {
   min-width: 0;
 }
 
-.dashboard-grid {
+.board-app {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.55fr);
-  grid-template-areas:
-    'overview profile'
-    'assigned profile'
-    'boards boards'
-    'activity activity';
-  gap: 18px;
-  padding: 28px clamp(16px, 4vw, 40px) 36px;
+  gap: 14px;
+  min-height: calc(100svh - 72px);
+  padding: 14px clamp(12px, 3vw, 28px) 24px;
 }
 
 .eyebrow {
@@ -128,9 +131,9 @@ button:disabled {
 }
 
 .overview-panel,
-.profile-panel,
 .assigned-panel,
 .boards-panel,
+.settings-panel,
 .activity-bar {
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -148,7 +151,6 @@ button:disabled {
 }
 
 .overview-panel h2,
-.profile-panel h2,
 .assigned-panel h2,
 .board-intro h2 {
   margin: 4px 0 8px;
@@ -180,41 +182,9 @@ button:disabled {
   font-size: 13px;
 }
 
-.profile-panel {
-  grid-area: profile;
-  display: grid;
-  align-content: start;
-  gap: 16px;
-  padding: 20px;
-}
-
 .profile-heading span {
   width: 46px;
   height: 46px;
-}
-
-.profile-panel dl {
-  display: grid;
-  gap: 10px;
-  margin: 0;
-}
-
-.profile-panel dl div {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  border-top: 1px solid var(--border);
-  padding-top: 10px;
-}
-
-.profile-panel dt {
-  color: var(--text-muted);
-}
-
-.profile-panel dd {
-  margin: 0;
-  color: var(--text-strong);
-  font-weight: 700;
 }
 
 .assigned-panel {
@@ -222,11 +192,21 @@ button:disabled {
   padding: 20px;
 }
 
-.boards-panel {
-  grid-area: boards;
+.board-switcher {
   display: grid;
-  gap: 16px;
-  padding: 20px;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(36, 50, 66, 0.06);
+  padding: 14px;
+}
+
+.board-switcher-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.55fr) minmax(320px, 1fr);
+  gap: 10px;
+  align-items: start;
 }
 
 .assigned-list {
@@ -273,14 +253,49 @@ button:disabled {
   padding: 6px 8px;
 }
 
-.card-manager {
+.board-workspace {
   display: grid;
-  gap: 14px;
+  gap: 16px;
+  min-height: calc(100svh - 190px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(36, 50, 66, 0.06);
+  padding: 18px;
+}
+
+.board-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.board-header h2 {
+  margin: 4px 0 6px;
+}
+
+.board-header p {
+  color: var(--text-muted);
 }
 
 .card-form {
   display: grid;
   gap: 8px;
+}
+
+.card-composer-panel {
+  grid-template-columns: minmax(220px, 1fr) minmax(160px, 0.5fr) minmax(150px, 0.45fr);
+  align-items: start;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f8fbff;
+  padding: 12px;
+}
+
+.card-composer-panel textarea,
+.card-composer-panel .form-actions {
+  grid-column: 1 / -1;
 }
 
 .form-actions,
@@ -299,6 +314,7 @@ button:disabled {
   grid-template-columns: repeat(4, minmax(180px, 1fr));
   gap: 10px;
   overflow-x: auto;
+  min-height: 420px;
 }
 
 .list-column {
@@ -310,6 +326,17 @@ button:disabled {
   border-radius: 8px;
   background: #edf2f7;
   padding: 10px;
+}
+
+.empty-board-state {
+  display: grid;
+  place-items: center;
+  min-height: 360px;
+  border: 1px dashed #cdd8e4;
+  border-radius: 8px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 24px;
 }
 
 .list-column h3 {
@@ -590,6 +617,28 @@ textarea {
   margin: 24px clamp(16px, 4vw, 48px);
 }
 
+.settings-page {
+  padding: 28px clamp(16px, 4vw, 40px) 36px;
+}
+
+.settings-panel {
+  display: grid;
+  gap: 16px;
+  max-width: 760px;
+  padding: 22px;
+}
+
+.settings-panel h2 {
+  margin: 4px 0 0;
+}
+
+.settings-placeholder {
+  display: grid;
+  gap: 16px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
 .status-panel {
   margin: 24px clamp(16px, 4vw, 48px);
   border: 1px solid var(--border);
@@ -609,27 +658,20 @@ textarea {
 
 @media (max-width: 980px) {
   .app-shell {
-    grid-template-columns: 1fr;
+    display: block;
   }
 
-  .sidebar {
+  .topbar {
     position: static;
-    grid-template-columns: minmax(0, 1fr);
-    min-height: 0;
+    grid-template-columns: 1fr;
   }
 
   .side-nav {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    justify-content: stretch;
   }
 
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      'overview'
-      'profile'
-      'assigned'
-      'boards'
-      'activity';
+  .side-nav button {
+    flex: 1;
   }
 
   .overview-panel {
@@ -638,7 +680,7 @@ textarea {
 }
 
 @media (max-width: 760px) {
-  .sidebar,
+  .topbar,
   .board-intro,
   .activity-bar {
     align-items: stretch;
@@ -647,13 +689,23 @@ textarea {
   .side-nav,
   .stat-grid,
   .assigned-list,
-  .board-manager-grid,
+  .board-switcher-grid,
   .list-board {
     grid-template-columns: 1fr;
   }
 
+  .auth-panel,
   .board-list article {
     flex-direction: column;
+    align-items: stretch;
+  }
+
+  .signed-in-user {
+    align-items: start;
+  }
+
+  .card-composer-panel {
+    grid-template-columns: 1fr;
   }
 
   .board-intro,
