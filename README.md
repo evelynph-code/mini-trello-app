@@ -42,9 +42,36 @@ The frontend expects the API at `http://localhost:4000/api`. Override that with:
 VITE_API_BASE_URL=http://localhost:4000/api npm run dev
 ```
 
+## GitHub OAuth
+
+Create a GitHub OAuth App when you are ready to test login locally.
+
+Use this callback URL in the GitHub OAuth App settings:
+
+```text
+http://localhost:4000/api/auth/github/callback
+```
+
+Then create `backend/.env` from `backend/.env.example` and set:
+
+```bash
+PORT=4000
+CLIENT_ORIGIN=http://localhost:5173
+API_BASE_URL=http://localhost:4000
+GITHUB_CLIENT_ID=your_github_oauth_client_id
+GITHUB_CLIENT_SECRET=your_github_oauth_client_secret
+GITHUB_OAUTH_CALLBACK_URL=http://localhost:4000/api/auth/github/callback
+```
+
+Restart the backend after changing OAuth environment variables.
+
 ## API
 
 - `GET /api/health` - health check.
+- `GET /api/auth/me` - fetch the signed-in GitHub user from the session.
+- `GET /api/auth/github` - start GitHub OAuth login.
+- `GET /api/auth/github/callback` - handle GitHub OAuth callback.
+- `POST /api/auth/logout` - clear the local session.
 - `GET /api/board` - fetch the demo board.
 - `POST /api/board/columns/:columnId/cards` - add a card to a column.
 - `PATCH /api/board/cards/:cardId/move` - move a card to another column.

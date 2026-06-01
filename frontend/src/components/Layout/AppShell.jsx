@@ -1,4 +1,11 @@
-export function AppShell({ children, currentUser, isAuthenticated, onToggleAuth }) {
+export function AppShell({
+  authError,
+  children,
+  currentUser,
+  isAuthenticated,
+  isSignInDisabled,
+  onToggleAuth,
+}) {
   return (
     <div className="app-shell">
       <aside className="sidebar" aria-label="Application navigation">
@@ -24,8 +31,9 @@ export function AppShell({ children, currentUser, isAuthenticated, onToggleAuth 
           ) : (
             <p>Guest workspace</p>
           )}
-          <button type="button" onClick={onToggleAuth}>
-            {isAuthenticated ? 'Sign out' : 'Sign in'}
+          {authError ? <p className="auth-error">{authError}</p> : null}
+          <button type="button" disabled={isSignInDisabled} onClick={onToggleAuth}>
+            {isAuthenticated ? 'Sign out' : 'Sign in with GitHub'}
           </button>
         </div>
       </aside>

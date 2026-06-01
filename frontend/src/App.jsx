@@ -1,27 +1,67 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AppShell } from './components/Layout/AppShell'
 import { BoardPage } from './pages/BoardPage'
+import { authApi } from './services/authApi'
 import './App.css'
 
-const demoUser = {
-  id: 'dummy-48291',
-  name: 'dummy-48291',
-  initials: 'D1',
-  role: 'Placeholder account',
-}
-
 function App() {
-  const [currentUser, setCurrentUser] = useState(demoUser)
+  const [currentUser, setCurrentUser] = useState(null)
+  const [authError, setAuthError] = useState('')
   const isAuthenticated = Boolean(currentUser)
 
-  const handleToggleAuth = () => {
-    setCurrentUser((user) => (user ? null : demoUser))
+  const loadCurrentUser = async () => {
+    setAuthError('')
+
+    try {
+      const user = await authApi.getCurrentUser()
+
+      setCurrentUser(user)
+    } catch {
+      setCurrentUser(null)
+    }
+  }
+
+  useEffect(() => {
+    let isMounted = true
+
+    authApi
+      .getCurrentUser()
+      .then((user) => {
+        if (isMounted) {
+          setCurrentUser(user)
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          setAuthError(err.message === 'Not authenticated.' ? '' : err.message)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const handleToggleAuth = async () => {
+    if (!isAuthenticated) {
+      window.location.href = authApi.getGitHubLoginUrl()
+      return
+    }
+
+    try {
+      await authApi.logout()
+      await loadCurrentUser()
+    } catch (err) {
+      setAuthError(err.message)
+    }
   }
 
   return (
     <AppShell
+      authError={authError}
       currentUser={currentUser}
       isAuthenticated={isAuthenticated}
+      isSignInDisabled={false}
       onToggleAuth={handleToggleAuth}
     >
       <BoardPage currentUser={currentUser} isAuthenticated={isAuthenticated} />

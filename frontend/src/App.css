@@ -87,9 +87,19 @@ button:hover {
 }
 
 .signed-in-user p,
-.profile-heading p {
+.profile-heading p,
+.auth-error {
   color: var(--text-muted);
   font-size: 13px;
+}
+
+.auth-error {
+  color: #9f3333;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
 }
 
 .dashboard-shell {
