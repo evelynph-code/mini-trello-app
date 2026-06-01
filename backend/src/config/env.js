@@ -7,6 +7,7 @@ require('dotenv').config({
 const env = {
   apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:4000',
   clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+  firebaseServiceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH || '',
   githubClientId: process.env.GITHUB_CLIENT_ID || '',
   githubClientSecret: process.env.GITHUB_CLIENT_SECRET || '',
   githubOAuthCallbackUrl:

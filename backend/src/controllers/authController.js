@@ -1,14 +1,18 @@
 const { env } = require('../config/env')
 const authService = require('../services/authService')
 
-const getCurrentUser = (req, res) => {
-  const user = authService.getCurrentUser(req)
+const getCurrentUser = async (req, res, next) => {
+  try {
+    const user = await authService.getCurrentUser(req)
 
-  if (!user) {
-    return res.status(401).json({ error: 'Not authenticated.' })
+    if (!user) {
+      return res.status(401).json({ error: 'Not authenticated.' })
+    }
+
+    return res.json({ data: user })
+  } catch (err) {
+    return next(err)
   }
-
-  return res.json({ data: user })
 }
 
 const redirectToGitHub = (_req, res, next) => {
@@ -34,6 +38,8 @@ const handleGitHubCallback = async (req, res, next) => {
 
     const accessToken = await authService.exchangeCodeForToken(code)
     const user = await authService.fetchGitHubUser(accessToken)
+    await authService.persistUser(user)
+
     const { sessionCookie } = authService.createSession(user)
 
     res.setHeader('Set-Cookie', [

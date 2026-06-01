@@ -159,3 +159,9 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Service account key
+backend/ServiceAccountKey.json
+backend/serviceAccountKey.json
+backend/*firebase-adminsdk*.json
+backend/*service-account*.json

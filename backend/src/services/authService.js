@@ -1,5 +1,6 @@
 const crypto = require('crypto')
 const { env } = require('../config/env')
+const userRepository = require('../repositories/userRepository')
 
 const sessions = new Map()
 const oauthStates = new Map()
@@ -134,7 +135,7 @@ const createSession = (user) => {
 
   sessions.set(sessionId, {
     createdAt: Date.now(),
-    user,
+    userId: user.id,
   })
 
   return {
@@ -143,11 +144,17 @@ const createSession = (user) => {
   }
 }
 
-const getCurrentUser = (req) => {
+const persistUser = (user) => userRepository.upsertUser(user)
+
+const getCurrentUser = async (req) => {
   const sessionId = getCookie(req, cookieNames.session)
   const session = sessionId ? sessions.get(sessionId) : null
 
-  return session?.user || null
+  if (!session?.userId) {
+    return null
+  }
+
+  return userRepository.findUserById(session.userId)
 }
 
 const clearSession = (req) => {
@@ -170,5 +177,6 @@ module.exports = {
   exchangeCodeForToken,
   fetchGitHubUser,
   getCurrentUser,
+  persistUser,
   validateState,
 }
