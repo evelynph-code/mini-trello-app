@@ -4,9 +4,13 @@ import { cardApi } from '../../services/cardApi'
 const emptyForm = {
   description: '',
   label: 'General',
-  listId: 'backlog',
+  listId: 'planning',
   title: '',
 }
+
+const normalizeListId = (listId) => (listId === 'backlog' ? 'planning' : listId)
+
+const normalizeListName = (listName) => (listName === 'Backlog' ? 'Planning' : listName)
 
 export function CardManager({
   boards,
@@ -141,7 +145,7 @@ export function CardManager({
     setForm({
       description: card.description || '',
       label: card.label || 'General',
-      listId: card.listId || 'backlog',
+      listId: normalizeListId(card.listId || 'planning'),
       title: card.title,
     })
     setIsComposerOpen(true)
@@ -155,6 +159,27 @@ export function CardManager({
       resetForm()
       setDetailsCard(null)
       await loadCards()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleMoveCard = async (card, listId) => {
+    if (!listId || normalizeListId(card.listId) === listId) {
+      return
+    }
+
+    try {
+      await cardApi.updateBoardCard(selectedBoard.id, card.id, {
+        description: card.description || '',
+        label: card.label || 'General',
+        listId,
+        title: card.title,
+      })
+      await loadCards()
+      if (detailsCard?.id === card.id) {
+        setDetailsCard(await cardApi.getBoardCard(selectedBoard.id, card.id))
+      }
     } catch (err) {
       setError(err.message)
     }
@@ -260,12 +285,26 @@ export function CardManager({
                 <section key={list.id} className="list-column">
                   <h3>{list.name}</h3>
                   {cards
-                    .filter((card) => card.listId === list.id)
+                    .filter((card) => normalizeListId(card.listId) === list.id)
                     .map((card) => (
                       <article key={card.id}>
-                        <span>{card.listName}</span>
+                        <span>{normalizeListName(card.listName)}</span>
                         <strong>{card.title}</strong>
                         <p>{card.description || 'No description'}</p>
+                        <label className="move-card-control">
+                          Move to
+                          <select
+                            aria-label={`Move ${card.title}`}
+                            value={normalizeListId(card.listId)}
+                            onChange={(event) => handleMoveCard(card, event.target.value)}
+                          >
+                            {selectedBoard.lists.map((targetList) => (
+                              <option key={targetList.id} value={targetList.id}>
+                                {targetList.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
                         <div className="card-actions">
                           <button type="button" onClick={() => handleShowDetails(card.id)}>
                             Details
@@ -291,7 +330,7 @@ export function CardManager({
               <dl>
                 <div>
                   <dt>Column</dt>
-                  <dd>{detailsCard.listName}</dd>
+                  <dd>{normalizeListName(detailsCard.listName)}</dd>
                 </div>
                 <div>
                   <dt>Label</dt>

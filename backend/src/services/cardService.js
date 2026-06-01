@@ -1,10 +1,10 @@
 const cardRepository = require('../repositories/cardRepository')
 const boardsService = require('./boardsService')
 
-const defaultListId = 'backlog'
+const defaultListId = 'planning'
 
 const getListName = (board, listId) =>
-  board.lists.find((list) => list.id === listId)?.name || 'Backlog'
+  board.lists.find((list) => list.id === listId)?.name || 'Planning'
 
 const ensureBoardAccess = async (boardId, userId) => boardsService.getBoard(boardId, userId)
 

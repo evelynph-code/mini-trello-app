@@ -349,6 +349,20 @@ button:disabled {
   font-size: 13px;
 }
 
+.move-card-control {
+  display: grid;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.move-card-control select {
+  min-height: 34px;
+  font-size: 13px;
+  padding: 6px 8px;
+}
+
 .card-details {
   border-top: 1px solid var(--border);
   padding-top: 14px;
