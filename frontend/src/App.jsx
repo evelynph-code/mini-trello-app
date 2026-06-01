@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { DndProvider } from 'react-dnd'
+import { HTML5Backend } from 'react-dnd-html5-backend'
 import { AppShell } from './components/Layout/AppShell'
 import { BoardPage } from './pages/BoardPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -59,21 +61,23 @@ function App() {
   }
 
   return (
-    <AppShell
-      authError={authError}
-      currentUser={currentUser}
-      isAuthenticated={isAuthenticated}
-      isSignInDisabled={false}
-      activePage={activePage}
-      onNavigate={setActivePage}
-      onToggleAuth={handleToggleAuth}
-    >
-      {activePage === 'settings' ? (
-        <SettingsPage currentUser={currentUser} isAuthenticated={isAuthenticated} />
-      ) : (
-        <BoardPage isAuthenticated={isAuthenticated} />
-      )}
-    </AppShell>
+    <DndProvider backend={HTML5Backend}>
+      <AppShell
+        authError={authError}
+        currentUser={currentUser}
+        isAuthenticated={isAuthenticated}
+        isSignInDisabled={false}
+        activePage={activePage}
+        onNavigate={setActivePage}
+        onToggleAuth={handleToggleAuth}
+      >
+        {activePage === 'settings' ? (
+          <SettingsPage currentUser={currentUser} isAuthenticated={isAuthenticated} />
+        ) : (
+          <BoardPage isAuthenticated={isAuthenticated} />
+        )}
+      </AppShell>
+    </DndProvider>
   )
 }
 

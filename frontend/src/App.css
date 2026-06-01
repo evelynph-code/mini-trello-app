@@ -311,8 +311,8 @@ button:disabled {
 
 .list-board {
   display: grid;
-  grid-template-columns: repeat(4, minmax(180px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
   overflow-x: auto;
   min-height: 420px;
 }
@@ -320,12 +320,27 @@ button:disabled {
 .list-column {
   display: grid;
   align-content: start;
-  gap: 10px;
-  min-width: 180px;
+  gap: 8px;
+  min-width: 0;
   border: 1px solid #d8e0ea;
   border-radius: 8px;
   background: #edf2f7;
+  padding: 8px;
+}
+
+.list-column.is-over {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.empty-list-copy {
+  border: 1px dashed #c4d0dd;
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  margin: 0;
   padding: 10px;
+  text-align: center;
 }
 
 .empty-board-state {
@@ -347,6 +362,14 @@ button:disabled {
 .card-listing article p {
   color: var(--text-muted);
   font-size: 13px;
+}
+
+.board-task-card {
+  cursor: grab;
+}
+
+.board-task-card:active {
+  cursor: grabbing;
 }
 
 .move-card-control {
@@ -391,6 +414,140 @@ button:disabled {
 .card-details dd {
   margin: 0;
   color: var(--text-strong);
+}
+
+.task-board {
+  display: grid;
+  gap: 14px;
+  border-top: 1px solid var(--border);
+  margin-top: 16px;
+  padding-top: 16px;
+}
+
+.task-board h3 {
+  margin: 4px 0 0;
+}
+
+.task-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(140px, 0.45fr) minmax(140px, 0.45fr);
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f8fbff;
+  padding: 12px;
+}
+
+.task-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.task-form label input,
+.task-form label select,
+.task-form label textarea {
+  color: var(--text-strong);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.task-form textarea,
+.task-form .form-actions,
+.task-form label:has(textarea) {
+  grid-column: 1 / -1;
+}
+
+.task-lanes {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.task-column {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  min-height: 220px;
+  border: 1px solid #d8e0ea;
+  border-radius: 8px;
+  background: #edf2f7;
+  padding: 8px;
+}
+
+.task-column.is-over {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.task-column h4 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 14px;
+}
+
+.task-item {
+  display: grid;
+  gap: 6px;
+  border: 1px solid #dfe6ef;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(36, 50, 66, 0.08);
+  padding: 8px;
+}
+
+.task-item-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: start;
+}
+
+.task-item-header strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.task-item-header span {
+  border-radius: 999px;
+  background: #f0f7ff;
+  color: #246a96;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 6px;
+}
+
+.task-item p,
+.task-column > p {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.task-item dl {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.task-item dl div {
+  display: grid;
+  gap: 2px;
+}
+
+.task-item dt {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.task-item dd {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 13px;
 }
 
 .inline-error {
@@ -719,6 +876,11 @@ textarea {
   }
 
   .card-composer-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .task-form,
+  .task-lanes {
     grid-template-columns: 1fr;
   }
 

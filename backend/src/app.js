@@ -7,13 +7,14 @@ const authRoutes = require('./routes/authRoutes')
 const boardCardRoutes = require('./routes/boardCardRoutes')
 const boardsRoutes = require('./routes/boardsRoutes')
 const cardRoutes = require('./routes/cardRoutes')
+const taskRoutes = require('./routes/taskRoutes')
 
 const app = express()
 
 app.use(
   cors({
     credentials: true,
-    origin: env.clientOrigin,
+    origin: env.clientOrigins,
   }),
 )
 app.use(express.json())
@@ -23,6 +24,7 @@ app.get('/api/health', (_req, res) => {
 })
 
 app.use('/api/auth', authRoutes)
+app.use('/api/boards/:boardId/cards/:cardId/tasks', taskRoutes)
 app.use('/api/boards/:boardId/cards', boardCardRoutes)
 app.use('/api/boards', boardsRoutes)
 app.use('/api/cards', cardRoutes)

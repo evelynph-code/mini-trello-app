@@ -3,9 +3,9 @@ const { admin, getFirestore } = require('../config/firebase')
 const cardsCollection = (boardId) =>
   getFirestore().collection('boards').doc(boardId).collection('cards')
 
-const normalizeListId = (listId) => (listId === 'backlog' ? 'planning' : listId)
+const normalizeListId = (listId) => (listId === 'planning' ? 'backlog' : listId)
 
-const normalizeListName = (listName) => (listName === 'Backlog' ? 'Planning' : listName)
+const normalizeListName = (listName) => (listName === 'Planning' ? 'Backlog' : listName)
 
 const serializeCard = (snapshot, boardId) => {
   if (!snapshot.exists) {

@@ -3,18 +3,29 @@ const { admin, getFirestore } = require('../config/firebase')
 const boardsCollection = () => getFirestore().collection('boards')
 
 const defaultLists = [
-  { id: 'planning', name: 'Planning' },
+  { id: 'icebox', name: 'Icebox' },
+  { id: 'backlog', name: 'Backlog' },
   { id: 'doing', name: 'Doing' },
   { id: 'review', name: 'Review' },
   { id: 'done', name: 'Done' },
 ]
 
 const normalizeList = (list) => {
-  if (list.id === 'backlog' || list.name === 'Backlog') {
-    return { id: 'planning', name: 'Planning' }
+  if (list.id === 'planning' || list.name === 'Planning') {
+    return { id: 'backlog', name: 'Backlog' }
   }
 
   return list
+}
+
+const hydrateLists = (lists = defaultLists) => {
+  const normalizedLists = lists.map(normalizeList)
+
+  return defaultLists.map((defaultList) => {
+    const existingList = normalizedLists.find((list) => list.id === defaultList.id)
+
+    return existingList || defaultList
+  })
 }
 
 const serializeBoard = (snapshot) => {
@@ -27,7 +38,7 @@ const serializeBoard = (snapshot) => {
   return {
     description: data.description || '',
     id: snapshot.id,
-    lists: (data.lists || defaultLists).map(normalizeList),
+    lists: hydrateLists(data.lists),
     name: data.name,
     ownerId: data.ownerId,
   }

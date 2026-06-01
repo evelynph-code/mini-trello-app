@@ -1,0 +1,95 @@
+const { admin, getFirestore } = require('../config/firebase')
+
+const tasksCollection = (boardId, cardId) =>
+  getFirestore()
+    .collection('boards')
+    .doc(boardId)
+    .collection('cards')
+    .doc(cardId)
+    .collection('tasks')
+
+const serializeTask = (snapshot) => {
+  if (!snapshot.exists) {
+    return null
+  }
+
+  const data = snapshot.data()
+
+  return {
+    assigneeId: data.assigneeId || null,
+    deadline: data.deadline || '',
+    description: data.description || '',
+    id: snapshot.id,
+    priority: data.priority || 'medium',
+    status: data.status || 'icebox',
+    title: data.title,
+  }
+}
+
+const findTasksByCardId = async (boardId, cardId) => {
+  const snapshot = await tasksCollection(boardId, cardId).get()
+
+  return snapshot.docs.map(serializeTask)
+}
+
+const findTaskById = async (boardId, cardId, taskId) => {
+  const snapshot = await tasksCollection(boardId, cardId).doc(taskId).get()
+
+  return serializeTask(snapshot)
+}
+
+const createTask = async (boardId, cardId, taskInput) => {
+  const now = admin.firestore.FieldValue.serverTimestamp()
+  const taskRef = tasksCollection(boardId, cardId).doc()
+  const task = {
+    assigneeId: taskInput.assigneeId || null,
+    createdAt: now,
+    deadline: taskInput.deadline || '',
+    description: taskInput.description || '',
+    priority: taskInput.priority || 'medium',
+    status: taskInput.status || 'icebox',
+    title: taskInput.title,
+    updatedAt: now,
+  }
+
+  await taskRef.set(task)
+
+  return {
+    assigneeId: task.assigneeId,
+    deadline: task.deadline,
+    description: task.description,
+    id: taskRef.id,
+    priority: task.priority,
+    status: task.status,
+    title: task.title,
+  }
+}
+
+const updateTask = async (boardId, cardId, taskId, taskInput) => {
+  const taskRef = tasksCollection(boardId, cardId).doc(taskId)
+  const now = admin.firestore.FieldValue.serverTimestamp()
+
+  await taskRef.update({
+    assigneeId: taskInput.assigneeId || null,
+    deadline: taskInput.deadline || '',
+    description: taskInput.description || '',
+    priority: taskInput.priority || 'medium',
+    status: taskInput.status || 'icebox',
+    title: taskInput.title,
+    updatedAt: now,
+  })
+
+  return findTaskById(boardId, cardId, taskId)
+}
+
+const deleteTask = async (boardId, cardId, taskId) => {
+  await tasksCollection(boardId, cardId).doc(taskId).delete()
+}
+
+module.exports = {
+  createTask,
+  deleteTask,
+  findTaskById,
+  findTasksByCardId,
+  updateTask,
+}

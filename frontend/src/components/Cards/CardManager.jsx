@@ -1,16 +1,113 @@
 import { useEffect, useState } from 'react'
+import { useDrag, useDrop } from 'react-dnd'
+import { TaskBoard } from '../Tasks/TaskBoard'
 import { cardApi } from '../../services/cardApi'
+
+const cardType = 'board-card'
 
 const emptyForm = {
   description: '',
   label: 'General',
-  listId: 'planning',
+  listId: 'backlog',
   title: '',
 }
 
-const normalizeListId = (listId) => (listId === 'backlog' ? 'planning' : listId)
+const normalizeListId = (listId) => (listId === 'planning' ? 'backlog' : listId)
 
-const normalizeListName = (listName) => (listName === 'Backlog' ? 'Planning' : listName)
+const normalizeListName = (listName) => (listName === 'Planning' ? 'Backlog' : listName)
+
+function BoardCard({
+  card,
+  isOpen,
+  onDelete,
+  onEdit,
+  onMove,
+  onToggleDetails,
+  selectedBoard,
+}) {
+  const [{ isDragging }, dragRef] = useDrag({
+    type: cardType,
+    item: card,
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  })
+
+  return (
+    <article ref={dragRef} className="board-task-card" style={{ opacity: isDragging ? 0.5 : 1 }}>
+      <span>{normalizeListName(card.listName)}</span>
+      <strong>{card.title}</strong>
+      <p>{card.description || 'No description'}</p>
+      <label className="move-card-control">
+        Move to
+        <select
+          aria-label={`Move ${card.title}`}
+          value={normalizeListId(card.listId)}
+          onChange={(event) => onMove(card, event.target.value)}
+        >
+          {selectedBoard.lists.map((targetList) => (
+            <option key={targetList.id} value={targetList.id}>
+              {targetList.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div className="card-actions">
+        <button type="button" onClick={() => onToggleDetails(card.id)}>
+          {isOpen ? 'Close task card' : 'Open task card'}
+        </button>
+        <button type="button" onClick={() => onEdit(card)}>
+          Edit
+        </button>
+        <button type="button" onClick={() => onDelete(card.id)}>
+          Delete
+        </button>
+      </div>
+    </article>
+  )
+}
+
+function ListColumn({
+  cards,
+  detailsCardId,
+  list,
+  onDelete,
+  onEdit,
+  onMove,
+  onToggleDetails,
+  selectedBoard,
+}) {
+  const [{ isOver }, dropRef] = useDrop({
+    accept: cardType,
+    drop: (card) => {
+      if (normalizeListId(card.listId) !== list.id) {
+        onMove(card, list.id)
+      }
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+    }),
+  })
+
+  return (
+    <section ref={dropRef} className={`list-column ${isOver ? 'is-over' : ''}`}>
+      <h3>{list.name}</h3>
+      {cards.length === 0 ? <p className="empty-list-copy">Drop cards here</p> : null}
+      {cards.map((card) => (
+        <BoardCard
+          key={card.id}
+          card={card}
+          isOpen={detailsCardId === card.id}
+          onDelete={onDelete}
+          onEdit={onEdit}
+          onMove={onMove}
+          onToggleDetails={onToggleDetails}
+          selectedBoard={selectedBoard}
+        />
+      ))}
+    </section>
+  )
+}
 
 export function CardManager({
   boards,
@@ -141,11 +238,20 @@ export function CardManager({
     }
   }
 
+  const handleToggleDetails = (cardId) => {
+    if (detailsCard?.id === cardId) {
+      setDetailsCard(null)
+      return
+    }
+
+    handleShowDetails(cardId)
+  }
+
   const handleEdit = (card) => {
     setForm({
       description: card.description || '',
       label: card.label || 'General',
-      listId: normalizeListId(card.listId || 'planning'),
+      listId: normalizeListId(card.listId || 'backlog'),
       title: card.title,
     })
     setIsComposerOpen(true)
@@ -282,50 +388,24 @@ export function CardManager({
             {!isLoading && cards.length === 0 ? <p>No cards in this board yet.</p> : null}
             <div className="list-board">
               {selectedBoard.lists.map((list) => (
-                <section key={list.id} className="list-column">
-                  <h3>{list.name}</h3>
-                  {cards
-                    .filter((card) => normalizeListId(card.listId) === list.id)
-                    .map((card) => (
-                      <article key={card.id}>
-                        <span>{normalizeListName(card.listName)}</span>
-                        <strong>{card.title}</strong>
-                        <p>{card.description || 'No description'}</p>
-                        <label className="move-card-control">
-                          Move to
-                          <select
-                            aria-label={`Move ${card.title}`}
-                            value={normalizeListId(card.listId)}
-                            onChange={(event) => handleMoveCard(card, event.target.value)}
-                          >
-                            {selectedBoard.lists.map((targetList) => (
-                              <option key={targetList.id} value={targetList.id}>
-                                {targetList.name}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <div className="card-actions">
-                          <button type="button" onClick={() => handleShowDetails(card.id)}>
-                            Details
-                          </button>
-                          <button type="button" onClick={() => handleEdit(card)}>
-                            Edit
-                          </button>
-                          <button type="button" onClick={() => handleDelete(card.id)}>
-                            Delete
-                          </button>
-                        </div>
-                      </article>
-                    ))}
-                </section>
+                <ListColumn
+                  key={list.id}
+                  cards={cards.filter((card) => normalizeListId(card.listId) === list.id)}
+                  detailsCardId={detailsCard?.id}
+                  list={list}
+                  onDelete={handleDelete}
+                  onEdit={handleEdit}
+                  onMove={handleMoveCard}
+                  onToggleDetails={handleToggleDetails}
+                  selectedBoard={selectedBoard}
+                />
               ))}
             </div>
           </div>
 
           {detailsCard ? (
             <article className="card-details">
-              <p className="eyebrow">Details</p>
+              <p className="eyebrow">Task card</p>
               <h3>{detailsCard.title}</h3>
               <dl>
                 <div>
@@ -341,6 +421,7 @@ export function CardManager({
                   <dd>{detailsCard.description || 'No description'}</dd>
                 </div>
               </dl>
+              <TaskBoard boardId={selectedBoard.id} cardId={detailsCard.id} />
             </article>
           ) : null}
         </>

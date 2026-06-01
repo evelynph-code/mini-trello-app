@@ -83,3 +83,8 @@ Restart the backend after changing OAuth environment variables.
 - `GET /api/boards/:boardId/cards/:id` - fetch one board card.
 - `PUT /api/boards/:boardId/cards/:id` - update one board card.
 - `DELETE /api/boards/:boardId/cards/:id` - delete one board card.
+- `GET /api/boards/:boardId/cards/:cardId/tasks` - list tasks in one card.
+- `POST /api/boards/:boardId/cards/:cardId/tasks` - create a task in one card.
+- `GET /api/boards/:boardId/cards/:cardId/tasks/:taskId` - fetch one task.
+- `PUT /api/boards/:boardId/cards/:cardId/tasks/:taskId` - update one task.
+- `DELETE /api/boards/:boardId/cards/:cardId/tasks/:taskId` - delete one task.

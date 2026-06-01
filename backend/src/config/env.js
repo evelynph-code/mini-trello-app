@@ -4,9 +4,19 @@ require('dotenv').config({
   path: path.resolve(__dirname, '../../.env'),
 })
 
+const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
+
 const env = {
   apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:4000',
-  clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+  clientOrigin,
+  clientOrigins: [
+    ...new Set([
+      clientOrigin,
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:5175',
+    ]),
+  ],
   firebaseServiceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH || '',
   githubClientId: process.env.GITHUB_CLIENT_ID || '',
   githubClientSecret: process.env.GITHUB_CLIENT_SECRET || '',
