@@ -1,17 +1,35 @@
-export function AppShell({ children }) {
+export function AppShell({ children, currentUser, isAuthenticated, onToggleAuth }) {
   return (
     <div className="app-shell">
-      <header className="topbar">
+      <aside className="sidebar" aria-label="Application navigation">
         <div>
           <p className="eyebrow">Mini Trello</p>
-          <h1>Team board</h1>
+          <h1>Dashboard</h1>
         </div>
-        <nav aria-label="Primary">
-          <a href="#board">Board</a>
+        <nav className="side-nav" aria-label="Primary">
+          <a href="#overview">Overview</a>
+          <a href="#cards">Cards</a>
+          <a href="#profile">Profile</a>
           <a href="#activity">Activity</a>
         </nav>
-      </header>
-      {children}
+        <div className="auth-panel">
+          {isAuthenticated ? (
+            <div className="signed-in-user">
+              <span aria-hidden="true">{currentUser.initials}</span>
+              <div>
+                <strong>{currentUser.name}</strong>
+                <p>{currentUser.role}</p>
+              </div>
+            </div>
+          ) : (
+            <p>Guest workspace</p>
+          )}
+          <button type="button" onClick={onToggleAuth}>
+            {isAuthenticated ? 'Sign out' : 'Sign in'}
+          </button>
+        </div>
+      </aside>
+      <div className="dashboard-shell">{children}</div>
     </div>
   )
 }

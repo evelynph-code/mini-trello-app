@@ -2,11 +2,11 @@ import { Column } from './Column'
 
 export function Board({ board, onCreateCard, onMoveCard }) {
   return (
-    <main id="board" className="board-page">
+    <section id="cards" className="board-page" aria-labelledby="cards-title">
       <section className="board-intro">
         <div>
           <p className="eyebrow">Workspace</p>
-          <h2>{board.title}</h2>
+          <h2 id="cards-title">{board.title}</h2>
           <p>{board.description}</p>
         </div>
         <div className="member-strip" aria-label="Board members">
@@ -30,6 +30,6 @@ export function Board({ board, onCreateCard, onMoveCard }) {
           />
         ))}
       </section>
-    </main>
+    </section>
   )
 }
