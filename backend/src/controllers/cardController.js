@@ -116,6 +116,40 @@ const updateBoardCard = async (req, res, next) => {
   }
 }
 
+const updateBoardCardOrder = async (req, res, next) => {
+  const { cards } = req.body
+
+  if (!Array.isArray(cards)) {
+    return res.status(400).json({ error: 'Cards must be an array.' })
+  }
+
+  try {
+    const nextCards = await cardService.updateCardOrderForBoard(
+      req.params.boardId,
+      req.user.id,
+      cards.map((card) => ({
+        id: card.id,
+        listId: card.listId,
+        position: card.position,
+      })),
+    )
+
+    if (!nextCards) {
+      return res.status(404).json({ error: 'Board not found.' })
+    }
+
+    emitBoardChanged(req.params.boardId, {
+      boardId: req.params.boardId,
+      cards: nextCards,
+      resource: 'cards',
+    })
+
+    return res.json({ data: nextCards })
+  } catch (err) {
+    return next(err)
+  }
+}
+
 const deleteBoardCard = async (req, res, next) => {
   try {
     const card = await cardService.deleteCardForBoard(
@@ -142,5 +176,6 @@ module.exports = {
   getBoardCard,
   getBoardCards,
   getCardsForUser,
+  updateBoardCardOrder,
   updateBoardCard,
 }

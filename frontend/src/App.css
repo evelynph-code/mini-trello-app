@@ -137,6 +137,11 @@ button:disabled {
   color: #9f3333;
 }
 
+.details-button {
+  min-height: 34px;
+  padding: 6px 9px;
+}
+
 .dashboard-shell {
   min-width: 0;
 }
@@ -480,20 +485,6 @@ button:disabled {
   cursor: grabbing;
 }
 
-.move-card-control {
-  display: grid;
-  gap: 4px;
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.move-card-control select {
-  min-height: 34px;
-  font-size: 13px;
-  padding: 6px 8px;
-}
-
 .task-card-screen {
   position: fixed;
   inset: 0;
@@ -528,24 +519,24 @@ button:disabled {
   margin: 4px 0 0;
 }
 
-.card-details dl {
+.card-details > dl {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 10px;
   margin: 0;
 }
 
-.card-details dl div {
+.card-details > dl div {
   display: grid;
   gap: 2px;
 }
 
-.card-details dt {
+.card-details > dl dt {
   color: var(--text-muted);
   font-size: 12px;
 }
 
-.card-details dd {
+.card-details > dl dd {
   margin: 0;
   color: var(--text-strong);
 }
@@ -559,6 +550,13 @@ button:disabled {
 
 .task-board h3 {
   margin: 4px 0 0;
+}
+
+.task-board-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .task-form {
@@ -631,9 +629,12 @@ button:disabled {
 
 .task-priority-badge,
 .task-status-badge {
+  display: inline-flex;
+  align-items: center;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
+  line-height: 1;
   padding: 3px 6px;
 }
 

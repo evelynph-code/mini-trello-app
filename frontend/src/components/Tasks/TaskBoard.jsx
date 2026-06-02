@@ -1,6 +1,8 @@
+import { Pencil, Plus, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { socket } from '../../services/realtime'
 import { taskApi } from '../../services/taskApi'
+import { IconButton } from '../Cards/IconButton'
 
 const statuses = [
   { id: 'icebox', name: 'Icebox' },
@@ -29,7 +31,12 @@ function TaskCard({ task, onDelete, onEdit, onMove }) {
     <article className="task-item">
       <div className="task-item-header">
         <strong>{task.title}</strong>
-        <span className="task-priority-badge">{task.priority}</span>
+        <div className="task-badges">
+          <span className={`task-status-badge status-${task.status || 'icebox'}`}>
+            {getStatusName(task.status)}
+          </span>
+          <span className="task-priority-badge">{task.priority}</span>
+        </div>
       </div>
       {task.description ? <p>{task.description}</p> : null}
       <dl>
@@ -57,12 +64,12 @@ function TaskCard({ task, onDelete, onEdit, onMove }) {
         </select>
       </label>
       <div className="card-actions">
-        <button type="button" onClick={() => onEdit(task)}>
-          Edit
-        </button>
-        <button type="button" onClick={() => onDelete(task.id)}>
-          Delete
-        </button>
+        <IconButton label="Edit task" onClick={() => onEdit(task)}>
+          <Pencil size={16} />
+        </IconButton>
+        <IconButton className="danger" label="Delete task" onClick={() => onDelete(task.id)}>
+          <Trash2 size={16} />
+        </IconButton>
       </div>
     </article>
   )
@@ -75,6 +82,7 @@ export function TaskBoard({
 }) {
   const [error, setError] = useState('')
   const [form, setForm] = useState(emptyTaskForm)
+  const [isFormOpen, setIsFormOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [selectedTaskId, setSelectedTaskId] = useState('')
@@ -142,6 +150,7 @@ export function TaskBoard({
 
   const resetForm = () => {
     setForm(emptyTaskForm)
+    setIsFormOpen(false)
     setIsEditing(false)
     setSelectedTaskId('')
   }
@@ -178,6 +187,7 @@ export function TaskBoard({
       title: task.title,
     })
     setIsEditing(true)
+    setIsFormOpen(true)
     setSelectedTaskId(task.id)
   }
 
@@ -219,12 +229,29 @@ export function TaskBoard({
           <p className="eyebrow">Task card</p>
           <h3 id="task-board-title">Tasks in this card</h3>
         </div>
-        {isLoading ? <span>Loading</span> : <span>{tasks.length} tasks</span>}
+        <div className="task-board-actions">
+          {isLoading ? <span>Loading</span> : <span>{tasks.length} tasks</span>}
+          {!isFormOpen ? (
+            <button
+              type="button"
+              className="details-button"
+              onClick={() => {
+                setForm(emptyTaskForm)
+                setIsEditing(false)
+                setSelectedTaskId('')
+                setIsFormOpen(true)
+              }}
+            >
+              <Plus size={16} />
+              Add task
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {error ? <p className="inline-error">{error}</p> : null}
 
-      {isEditing ? (
+      {isFormOpen ? (
         <form className="task-form task-composer-card" onSubmit={handleSubmit}>
           <label>
             Task
@@ -304,6 +331,7 @@ export function TaskBoard({
                 resetForm()
               }}
             >
+              <X size={15} />
               Cancel
             </button>
           </div>

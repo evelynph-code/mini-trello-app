@@ -91,6 +91,24 @@ const updateCard = async (boardId, cardId, cardInput) => {
   return findCardById(boardId, cardId)
 }
 
+const updateCardOrder = async (boardId, orderedCards) => {
+  const batch = getFirestore().batch()
+  const now = admin.firestore.FieldValue.serverTimestamp()
+
+  orderedCards.forEach((card) => {
+    batch.update(cardsCollection(boardId).doc(card.id), {
+      listId: card.listId,
+      listName: card.listName,
+      position: card.position,
+      updatedAt: now,
+    })
+  })
+
+  await batch.commit()
+
+  return findCardsByBoardId(boardId)
+}
+
 const deleteCard = async (boardId, cardId) => {
   await cardsCollection(boardId).doc(cardId).delete()
 }
@@ -101,5 +119,6 @@ module.exports = {
   findCardById,
   findCardsByAssigneeId,
   findCardsByBoardId,
+  updateCardOrder,
   updateCard,
 }

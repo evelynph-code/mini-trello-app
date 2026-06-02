@@ -17,7 +17,6 @@ export function ListColumn({
   onEdit,
   onRenameList,
   onStartEditList,
-  onMove,
   onReorder,
   onReorderList,
   onSaveOrder,
@@ -49,8 +48,9 @@ export function ListColumn({
       }
 
       if (normalizeListId(card.listId) !== list.id) {
-        onMove(card, list.id)
-        onSaveOrder()
+        onReorder(card, list.id, cards.length)
+        card.listId = list.id
+        card.index = cards.length
       }
     },
     collect: (monitor) => ({
@@ -136,7 +136,6 @@ export function ListColumn({
           listId={list.id}
           onDelete={onDelete}
           onEdit={onEdit}
-          onMove={onMove}
           onReorder={onReorder}
           onSaveOrder={onSaveOrder}
           onToggleDetails={onToggleDetails}

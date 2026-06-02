@@ -245,28 +245,6 @@ export function CardManager({
     }
   }
 
-  const handleMoveCard = async (card, listId) => {
-    if (!listId || normalizeListId(card.listId) === listId) {
-      return
-    }
-
-    try {
-      await cardApi.updateBoardCard(selectedBoard.id, card.id, {
-        description: card.description || '',
-        label: card.label || 'General',
-        listId,
-        position: cards.filter((item) => normalizeListId(item.listId) === listId).length,
-        title: card.title,
-      })
-      await loadCards()
-      if (detailsCard?.id === card.id) {
-        setDetailsCard(await cardApi.getBoardCard(selectedBoard.id, card.id))
-      }
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
   const handleCreateCardInList = async (listId, title) => {
     try {
       const nextPosition = cards.filter((card) => normalizeListId(card.listId) === listId).length
@@ -300,30 +278,38 @@ export function CardManager({
       const remainingCards = currentCards.filter((card) => card.id !== draggedCard.id)
       const targetCards = remainingCards.filter((card) => normalizeListId(card.listId) === targetListId)
       const insertBeforeCard = targetCards[targetIndex]
-      const insertIndex = insertBeforeCard
-        ? remainingCards.findIndex((card) => card.id === insertBeforeCard.id)
-        : remainingCards.length
+      const lastTargetCard = targetCards[targetCards.length - 1]
+      let insertIndex = remainingCards.length
+
+      if (insertBeforeCard) {
+        insertIndex = remainingCards.findIndex((card) => card.id === insertBeforeCard.id)
+      } else if (lastTargetCard) {
+        insertIndex = remainingCards.findIndex((card) => card.id === lastTargetCard.id) + 1
+      }
+
       const nextCards = [...remainingCards]
 
       nextCards.splice(insertIndex, 0, movingCard)
 
-      return applyListPositions(nextCards)
+      const positionedCards = applyListPositions(nextCards)
+
+      cardsRef.current = positionedCards
+      return positionedCards
     })
   }
 
   const handleSaveCardOrder = async () => {
     try {
-      await Promise.all(
-        cardsRef.current.map((card) =>
-          cardApi.updateBoardCard(selectedBoard.id, card.id, {
-            description: card.description || '',
-            label: card.label || 'General',
-            listId: normalizeListId(card.listId),
-            position: Number.isFinite(card.position) ? card.position : 0,
-            title: card.title,
-          }),
-        ),
+      const nextCards = await cardApi.updateBoardCardOrder(
+        selectedBoard.id,
+        cardsRef.current.map((card) => ({
+          id: card.id,
+          listId: normalizeListId(card.listId),
+          position: Number.isFinite(card.position) ? card.position : 0,
+        })),
       )
+
+      applyRemoteCards(nextCards)
     } catch (err) {
       setError(err.message)
       await loadCards()
@@ -490,7 +476,6 @@ export function CardManager({
                   onEdit={handleEdit}
                   onRenameList={handleRenameList}
                   onStartEditList={setEditingListId}
-                  onMove={handleMoveCard}
                   onReorder={handleReorderCard}
                   onReorderList={handleReorderList}
                   onSaveOrder={handleSaveCardOrder}
