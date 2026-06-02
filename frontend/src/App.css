@@ -791,6 +791,98 @@ button:disabled {
   color: #b42318;
 }
 
+.comment-activity-panel {
+  display: grid;
+  gap: 14px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.comment-activity-panel h3,
+.comment-activity-panel h4 {
+  margin: 4px 0 0;
+}
+
+.comment-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f8fbff;
+  padding: 12px;
+}
+
+.comment-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.comment-form textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+.comment-form button {
+  min-height: 38px;
+}
+
+.comment-activity-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.8fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.comments-list,
+.activity-list {
+  display: grid;
+  gap: 8px;
+}
+
+.comment-entry,
+.activity-entry {
+  border: 1px solid #dfe6ef;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 10px;
+}
+
+.comment-entry {
+  display: grid;
+  gap: 6px;
+}
+
+.comment-entry > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.comment-entry p,
+.activity-entry p {
+  color: var(--text-strong);
+  font-size: 13px;
+}
+
+.comment-entry time,
+.activity-entry time {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.activity-entry {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  color: #246a96;
+}
+
 .inline-error {
   border: 1px solid #f0b5b5;
   border-radius: 8px;
@@ -1121,7 +1213,9 @@ textarea {
   }
 
   .task-form,
-  .task-list {
+  .task-list,
+  .comment-form,
+  .comment-activity-grid {
     grid-template-columns: 1fr;
   }
 

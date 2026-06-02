@@ -38,6 +38,14 @@ const emitTasksChanged = (boardId, cardId, payload) => {
   io.to(`tasks:${boardId}:${cardId}`).emit('tasks:changed', payload)
 }
 
+const emitCardDetailsChanged = (boardId, cardId, payload) => {
+  if (!io) {
+    return
+  }
+
+  io.to(`tasks:${boardId}:${cardId}`).emit('card-details:changed', payload)
+}
+
 const emitBoardChanged = (boardId, payload) => {
   if (!io) {
     return
@@ -48,6 +56,7 @@ const emitBoardChanged = (boardId, payload) => {
 
 module.exports = {
   emitBoardChanged,
+  emitCardDetailsChanged,
   emitTasksChanged,
   initializeSocket,
 }

@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import { CommentActivityPanel } from '../Tasks/CommentActivityPanel'
 import { TaskBoard } from '../Tasks/TaskBoard'
 import { IconButton } from './IconButton'
 import { getListName } from './cardUtils'
@@ -44,6 +45,7 @@ export function CardDetailsDialog({ card, onClose, onTasksChange, selectedBoard 
           </div>
         </dl>
         <TaskBoard boardId={selectedBoard.id} cardId={card.id} onTasksChange={onTasksChange} />
+        <CommentActivityPanel boardId={selectedBoard.id} cardId={card.id} />
       </article>
     </div>
   )
