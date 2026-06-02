@@ -60,4 +60,26 @@ const upsertUser = async (user) => {
   }
 }
 
-module.exports = { findUserById, upsertUser }
+const updateUser = async (userId, userInput) => {
+  const userRef = usersCollection().doc(userId)
+  const snapshot = await userRef.get()
+
+  if (!snapshot.exists) {
+    return null
+  }
+
+  const update = {
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  }
+
+  if (userInput.name) {
+    update.name = userInput.name
+    update.initials = userInput.name.slice(0, 2).toUpperCase()
+  }
+
+  await userRef.update(update)
+
+  return findUserById(userId)
+}
+
+module.exports = { findUserById, updateUser, upsertUser }

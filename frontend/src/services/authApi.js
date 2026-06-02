@@ -25,4 +25,9 @@ export const authApi = {
     request('/auth/logout', {
       method: 'POST',
     }),
+  updateCurrentUser: (user) =>
+    request('/auth/me', {
+      method: 'PATCH',
+      body: JSON.stringify(user),
+    }),
 }

@@ -15,6 +15,30 @@ const getCurrentUser = async (req, res, next) => {
   }
 }
 
+const updateCurrentUser = async (req, res, next) => {
+  const name = String(req.body.name || '').trim()
+
+  if (!name) {
+    return res.status(400).json({ error: 'Display name is required.' })
+  }
+
+  if (name.length > 60) {
+    return res.status(400).json({ error: 'Display name must be 60 characters or fewer.' })
+  }
+
+  try {
+    const user = await authService.updateCurrentUser(req, { name })
+
+    if (!user) {
+      return res.status(401).json({ error: 'Not authenticated.' })
+    }
+
+    return res.json({ data: user })
+  } catch (err) {
+    return next(err)
+  }
+}
+
 const redirectToGitHub = (_req, res, next) => {
   try {
     authService.assertGitHubOAuthConfigured()
@@ -63,4 +87,5 @@ module.exports = {
   handleGitHubCallback,
   logout,
   redirectToGitHub,
+  updateCurrentUser,
 }

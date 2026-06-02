@@ -72,7 +72,11 @@ function App() {
         onToggleAuth={handleToggleAuth}
       >
         {activePage === 'settings' ? (
-          <SettingsPage currentUser={currentUser} isAuthenticated={isAuthenticated} />
+          <SettingsPage
+            currentUser={currentUser}
+            isAuthenticated={isAuthenticated}
+            onUserChange={setCurrentUser}
+          />
         ) : (
           <BoardPage isAuthenticated={isAuthenticated} />
         )}
