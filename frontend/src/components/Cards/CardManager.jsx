@@ -12,6 +12,7 @@ import {
 } from './cardUtils'
 import { boardsApi } from '../../services/boardsApi'
 import { cardApi } from '../../services/cardApi'
+import { socket } from '../../services/realtime'
 
 export function CardManager({
   isAuthenticated,
@@ -40,6 +41,17 @@ export function CardManager({
     listsRef.current = selectedBoard?.lists || []
   }, [selectedBoard])
 
+  const applyRemoteCards = (nextCards) => {
+    setCards(applyListPositions(sortCardsByPosition(nextCards)))
+    setDetailsCard((currentCard) => {
+      if (!currentCard) {
+        return currentCard
+      }
+
+      return nextCards.find((card) => card.id === currentCard.id) || null
+    })
+  }
+
   const loadCards = async () => {
     if (!isAuthenticated) {
       setCards([])
@@ -59,7 +71,7 @@ export function CardManager({
     try {
       const nextCards = await cardApi.getBoardCards(selectedBoard.id)
 
-      setCards(applyListPositions(sortCardsByPosition(nextCards)))
+      applyRemoteCards(nextCards)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -94,7 +106,7 @@ export function CardManager({
         const nextCards = await cardApi.getBoardCards(selectedBoard.id)
 
         if (isMounted) {
-          setCards(applyListPositions(sortCardsByPosition(nextCards)))
+          applyRemoteCards(nextCards)
         }
       } catch (err) {
         if (isMounted) {
@@ -111,6 +123,37 @@ export function CardManager({
       isMounted = false
     }
   }, [isAuthenticated, selectedBoard])
+
+  useEffect(() => {
+    if (!isAuthenticated || !selectedBoard) {
+      return undefined
+    }
+
+    const handleBoardChanged = (payload) => {
+      if (payload.boardId !== selectedBoard.id) {
+        return
+      }
+
+      if (payload.board) {
+        onBoardsChange((currentBoards) =>
+          currentBoards.map((board) => (board.id === payload.board.id ? payload.board : board)),
+        )
+      }
+
+      if (payload.cards) {
+        applyRemoteCards(payload.cards)
+      }
+    }
+
+    socket.connect()
+    socket.emit('board:join', { boardId: selectedBoard.id })
+    socket.on('board:changed', handleBoardChanged)
+
+    return () => {
+      socket.emit('board:leave', { boardId: selectedBoard.id })
+      socket.off('board:changed', handleBoardChanged)
+    }
+  }, [isAuthenticated, onBoardsChange, selectedBoard])
 
   const handleChange = (event) => {
     setForm((current) => ({
