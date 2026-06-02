@@ -18,11 +18,12 @@ const request = async (path, options = {}) => {
   return payload.data
 }
 
-export const authApi = {
-  getCurrentUser: () => request('/auth/me'),
-  getGitHubLoginUrl: () => `${API_BASE_URL}/auth/github`,
-  logout: () =>
-    request('/auth/logout', {
-      method: 'POST',
+export const usersApi = {
+  getUser: (userId) => request(`/users/${userId}`),
+  getUsers: (query = '') => request(`/users${query ? `?q=${encodeURIComponent(query)}` : ''}`),
+  updateUser: (userId, user) =>
+    request(`/users/${userId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(user),
     }),
 }

@@ -9,6 +9,7 @@ const boardCardRoutes = require('./routes/boardCardRoutes')
 const boardsRoutes = require('./routes/boardsRoutes')
 const cardRoutes = require('./routes/cardRoutes')
 const taskRoutes = require('./routes/taskRoutes')
+const userRoutes = require('./routes/userRoutes')
 
 const app = express()
 
@@ -30,6 +31,7 @@ app.use('/api/boards/:boardId/cards/:cardId/tasks', taskRoutes)
 app.use('/api/boards/:boardId/cards', boardCardRoutes)
 app.use('/api/boards', boardsRoutes)
 app.use('/api/cards', cardRoutes)
+app.use('/api/users', userRoutes)
 
 app.use(notFound)
 app.use(errorHandler)

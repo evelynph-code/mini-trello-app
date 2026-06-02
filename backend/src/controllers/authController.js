@@ -1,5 +1,6 @@
 const { env } = require('../config/env')
 const authService = require('../services/authService')
+const userService = require('../services/userService')
 
 const getCurrentUser = async (req, res, next) => {
   try {
@@ -27,7 +28,13 @@ const updateCurrentUser = async (req, res, next) => {
   }
 
   try {
-    const user = await authService.updateCurrentUser(req, { name })
+    const currentUser = await authService.getCurrentUser(req)
+
+    if (!currentUser) {
+      return res.status(401).json({ error: 'Not authenticated.' })
+    }
+
+    const user = await userService.updateUser(currentUser.id, currentUser.id, { name })
 
     if (!user) {
       return res.status(401).json({ error: 'Not authenticated.' })

@@ -34,7 +34,13 @@ export function AppShell({
         <div className="auth-panel">
           {isAuthenticated ? (
             <div className="signed-in-user">
-              <span aria-hidden="true">{currentUser.initials}</span>
+              {currentUser.avatarUrl ? (
+                <img alt="" className="profile-avatar" src={currentUser.avatarUrl} />
+              ) : (
+                <span aria-hidden="true" className="profile-avatar-fallback">
+                  {currentUser.initials}
+                </span>
+              )}
               <div>
                 <strong>{currentUser.name}</strong>
                 <p>{currentUser.role}</p>

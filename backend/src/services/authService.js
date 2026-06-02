@@ -146,16 +146,6 @@ const createSession = (user) => {
 
 const persistUser = (user) => userRepository.upsertUser(user)
 
-const updateCurrentUser = async (req, userInput) => {
-  const user = await getCurrentUser(req)
-
-  if (!user) {
-    return null
-  }
-
-  return userRepository.updateUser(user.id, userInput)
-}
-
 const getCurrentUser = async (req) => {
   const sessionId = getCookie(req, cookieNames.session)
   const session = sessionId ? sessions.get(sessionId) : null
@@ -188,6 +178,5 @@ module.exports = {
   fetchGitHubUser,
   getCurrentUser,
   persistUser,
-  updateCurrentUser,
   validateState,
 }
