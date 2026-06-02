@@ -11,12 +11,16 @@ const serializeUser = (snapshot) => {
 
   return {
     avatarUrl: data.avatarUrl || null,
+    email: data.email || '',
+    emailVerified: Boolean(data.emailVerified),
+    emailVerificationStatus: data.emailVerificationStatus || null,
     githubId: data.githubId,
     id: snapshot.id,
     initials: data.initials,
     name: data.name,
     provider: data.provider,
     role: data.role,
+    username: data.username || '',
   }
 }
 
@@ -24,6 +28,43 @@ const findUserById = async (userId) => {
   const snapshot = await usersCollection().doc(userId).get()
 
   return serializeUser(snapshot)
+}
+
+const findUserByEmail = async (email) => {
+  const snapshot = await usersCollection().where('email', '==', email).limit(1).get()
+
+  return snapshot.empty ? null : serializeUser(snapshot.docs[0])
+}
+
+const findUserByUsername = async (username) => {
+  const snapshot = await usersCollection().where('username', '==', username).limit(1).get()
+
+  return snapshot.empty ? null : serializeUser(snapshot.docs[0])
+}
+
+const findLocalUserCredentials = async (identifier) => {
+  const normalizedIdentifier = identifier.toLowerCase()
+  const usernameSnapshot = await usersCollection()
+    .where('username', '==', normalizedIdentifier)
+    .limit(1)
+    .get()
+  const snapshot = usernameSnapshot.empty
+    ? await usersCollection().where('email', '==', normalizedIdentifier).limit(1).get()
+    : usernameSnapshot
+
+  if (snapshot.empty) {
+    return null
+  }
+
+  const doc = snapshot.docs[0]
+  const data = doc.data()
+
+  return {
+    id: doc.id,
+    passwordHash: data.passwordHash || '',
+    passwordSalt: data.passwordSalt || '',
+    user: serializeUser(doc),
+  }
 }
 
 const findUsers = async (query = '') => {
@@ -81,6 +122,30 @@ const upsertUser = async (user) => {
   return savedUser
 }
 
+const createLocalUser = async (userInput) => {
+  const now = admin.firestore.FieldValue.serverTimestamp()
+  const userRef = usersCollection().doc(userInput.id)
+  const user = {
+    avatarUrl: null,
+    createdAt: now,
+    email: userInput.email,
+    emailVerified: false,
+    emailVerificationStatus: 'pending',
+    initials: userInput.name.slice(0, 2).toUpperCase(),
+    name: userInput.name,
+    passwordHash: userInput.passwordHash,
+    passwordSalt: userInput.passwordSalt,
+    provider: 'local',
+    role: userInput.role || 'Team member',
+    updatedAt: now,
+    username: userInput.username,
+  }
+
+  await userRef.set(user)
+
+  return findUserById(userInput.id)
+}
+
 const updateUser = async (userId, userInput) => {
   const userRef = usersCollection().doc(userId)
   const snapshot = await userRef.get()
@@ -107,4 +172,13 @@ const updateUser = async (userId, userInput) => {
   return findUserById(userId)
 }
 
-module.exports = { findUserById, findUsers, updateUser, upsertUser }
+module.exports = {
+  createLocalUser,
+  findLocalUserCredentials,
+  findUserByEmail,
+  findUserById,
+  findUserByUsername,
+  findUsers,
+  updateUser,
+  upsertUser,
+}

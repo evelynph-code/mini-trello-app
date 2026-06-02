@@ -183,11 +183,65 @@ button:disabled {
   gap: 10px;
 }
 
+.landing-auth-card {
+  display: grid;
+  gap: 10px;
+  max-width: 430px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.14);
+  padding: 12px;
+}
+
+.auth-mode-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.auth-mode-tabs button {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.auth-mode-tabs .active {
+  background: #ffffff;
+  color: #0f315a;
+}
+
+.landing-auth-card input {
+  min-height: 40px;
+  border-color: rgba(255, 255, 255, 0.28);
+  background: #ffffff;
+}
+
+.landing-auth-card > button {
+  border-color: rgba(255, 255, 255, 0.24);
+  background: #9ee7ff;
+  color: #0f315a;
+  font-weight: 800;
+}
+
+.landing-auth-card > p {
+  color: #dceeff;
+  font-size: 12px;
+}
+
 .landing-error {
   width: fit-content;
   border: 1px solid rgba(255, 255, 255, 0.34);
   border-radius: 8px;
   background: rgba(122, 29, 29, 0.28);
+  color: #ffffff;
+  padding: 10px 12px;
+}
+
+.landing-notice {
+  width: fit-content;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 8px;
+  background: rgba(14, 116, 144, 0.35);
   color: #ffffff;
   padding: 10px 12px;
 }

@@ -1,9 +1,11 @@
 const crypto = require('crypto')
+const { promisify } = require('util')
 const { env } = require('../config/env')
 const userRepository = require('../repositories/userRepository')
 
 const sessions = new Map()
 const oauthStates = new Map()
+const scryptAsync = promisify(crypto.scrypt)
 
 const cookieNames = {
   session: 'mini_trello_session',
@@ -11,6 +13,33 @@ const cookieNames = {
 }
 
 const createRandomToken = () => crypto.randomBytes(24).toString('hex')
+
+const normalizeEmail = (email) => String(email || '').trim().toLowerCase()
+
+const normalizeUsername = (username) =>
+  String(username || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '')
+
+const hashPassword = async (password, salt = createRandomToken()) => {
+  const derivedKey = await scryptAsync(password, salt, 64)
+
+  return {
+    hash: derivedKey.toString('hex'),
+    salt,
+  }
+}
+
+const verifyPassword = async (password, salt, expectedHash) => {
+  if (!salt || !expectedHash) {
+    return false
+  }
+
+  const { hash } = await hashPassword(password, salt)
+
+  return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(expectedHash, 'hex'))
+}
 
 const createCookie = (name, value, options = {}) => {
   const parts = [
@@ -146,6 +175,53 @@ const createSession = (user) => {
 
 const persistUser = (user) => userRepository.upsertUser(user)
 
+const registerLocalUser = async ({ email, name, password, username }) => {
+  const normalizedEmail = normalizeEmail(email)
+  const normalizedUsername = normalizeUsername(username)
+
+  if (await userRepository.findUserByEmail(normalizedEmail)) {
+    const error = new Error('Email is already registered.')
+    error.status = 409
+    throw error
+  }
+
+  if (await userRepository.findUserByUsername(normalizedUsername)) {
+    const error = new Error('Username is already taken.')
+    error.status = 409
+    throw error
+  }
+
+  const { hash, salt } = await hashPassword(password)
+
+  return userRepository.createLocalUser({
+    email: normalizedEmail,
+    id: `local-${normalizedUsername}`,
+    name,
+    passwordHash: hash,
+    passwordSalt: salt,
+    role: 'Team member',
+    username: normalizedUsername,
+  })
+}
+
+const loginLocalUser = async ({ identifier, password }) => {
+  const credentials = await userRepository.findLocalUserCredentials(
+    String(identifier || '').trim().toLowerCase(),
+  )
+
+  if (!credentials) {
+    return null
+  }
+
+  const isValidPassword = await verifyPassword(
+    password,
+    credentials.passwordSalt,
+    credentials.passwordHash,
+  )
+
+  return isValidPassword ? credentials.user : null
+}
+
 const getCurrentUser = async (req) => {
   const sessionId = getCookie(req, cookieNames.session)
   const session = sessionId ? sessions.get(sessionId) : null
@@ -177,6 +253,8 @@ module.exports = {
   exchangeCodeForToken,
   fetchGitHubUser,
   getCurrentUser,
+  loginLocalUser,
   persistUser,
+  registerLocalUser,
   validateState,
 }

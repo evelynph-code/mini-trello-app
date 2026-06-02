@@ -21,8 +21,18 @@ const request = async (path, options = {}) => {
 export const authApi = {
   getCurrentUser: () => request('/auth/me'),
   getGitHubLoginUrl: () => `${API_BASE_URL}/auth/github`,
+  login: (credentials) =>
+    request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    }),
   logout: () =>
     request('/auth/logout', {
       method: 'POST',
+    }),
+  register: (account) =>
+    request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(account),
     }),
 }

@@ -71,6 +71,11 @@ function App() {
       <LandingPage
         authError={authError}
         isLoading={!isAuthReady}
+        onAuthSuccess={(user) => {
+          setCurrentUser(user)
+          setAuthError('')
+          setActivePage('dashboard')
+        }}
         onSignIn={() => {
           window.location.href = authApi.getGitHubLoginUrl()
         }}

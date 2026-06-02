@@ -132,6 +132,30 @@ export function UserSettingsList({ currentUser, onUserChange }) {
         </div>
       </article>
 
+      {currentUser.provider === 'local' ? (
+        <>
+          <article className="user-setting-row">
+            <div>
+              <p className="eyebrow">Email</p>
+              <h3>Login email</h3>
+            </div>
+            <div className="user-setting-value">
+              <strong>{currentUser.email}</strong>
+            </div>
+          </article>
+
+          <article className="user-setting-row">
+            <div>
+              <p className="eyebrow">Verification</p>
+              <h3>Email status</h3>
+            </div>
+            <div className="user-setting-value">
+              <strong>{currentUser.emailVerified ? 'Verified' : 'Pending'}</strong>
+            </div>
+          </article>
+        </>
+      ) : null}
+
       <article className="user-setting-row">
         <div>
           <p className="eyebrow">Access</p>
