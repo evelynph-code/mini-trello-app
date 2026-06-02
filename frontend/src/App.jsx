@@ -3,6 +3,7 @@ import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { AppShell } from './components/Layout/AppShell'
 import { BoardPage } from './pages/BoardPage'
+import { LandingPage } from './pages/LandingPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { authApi } from './services/authApi'
 import './App.css'
@@ -11,6 +12,7 @@ function App() {
   const [activePage, setActivePage] = useState('dashboard')
   const [currentUser, setCurrentUser] = useState(null)
   const [authError, setAuthError] = useState('')
+  const [isAuthReady, setIsAuthReady] = useState(false)
   const isAuthenticated = Boolean(currentUser)
 
   const loadCurrentUser = async () => {
@@ -22,6 +24,8 @@ function App() {
       setCurrentUser(user)
     } catch {
       setCurrentUser(null)
+    } finally {
+      setIsAuthReady(true)
     }
   }
 
@@ -33,11 +37,13 @@ function App() {
       .then((user) => {
         if (isMounted) {
           setCurrentUser(user)
+          setIsAuthReady(true)
         }
       })
       .catch((err) => {
         if (isMounted) {
           setAuthError(err.message === 'Not authenticated.' ? '' : err.message)
+          setIsAuthReady(true)
         }
       })
 
@@ -58,6 +64,18 @@ function App() {
     } catch (err) {
       setAuthError(err.message)
     }
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <LandingPage
+        authError={authError}
+        isLoading={!isAuthReady}
+        onSignIn={() => {
+          window.location.href = authApi.getGitHubLoginUrl()
+        }}
+      />
+    )
   }
 
   return (

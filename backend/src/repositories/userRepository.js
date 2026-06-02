@@ -45,20 +45,23 @@ const findUsers = async (query = '') => {
 const upsertUser = async (user) => {
   const now = admin.firestore.FieldValue.serverTimestamp()
   const userRef = usersCollection().doc(user.id)
-
-  const userRecord = {
-    avatarUrl: user.avatarUrl || null,
-    githubId: user.githubId,
-    initials: user.initials,
-    lastLoginAt: now,
-    name: user.name,
-    provider: 'github',
-    role: user.role,
-    updatedAt: now,
-  }
+  let savedUser = null
 
   await getFirestore().runTransaction(async (transaction) => {
     const snapshot = await transaction.get(userRef)
+    const existingUser = snapshot.exists ? snapshot.data() : null
+    const name = existingUser?.name || user.name
+    const role = existingUser?.role || user.role
+    const userRecord = {
+      avatarUrl: user.avatarUrl || existingUser?.avatarUrl || null,
+      githubId: user.githubId,
+      initials: name.slice(0, 2).toUpperCase(),
+      lastLoginAt: now,
+      name,
+      provider: 'github',
+      role,
+      updatedAt: now,
+    }
 
     transaction.set(
       userRef,
@@ -68,12 +71,14 @@ const upsertUser = async (user) => {
       },
       { merge: true },
     )
+
+    savedUser = {
+      id: user.id,
+      ...userRecord,
+    }
   })
 
-  return {
-    id: user.id,
-    ...userRecord,
-  }
+  return savedUser
 }
 
 const updateUser = async (userId, userInput) => {
