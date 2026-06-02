@@ -26,6 +26,22 @@ const findUserById = async (userId) => {
   return serializeUser(snapshot)
 }
 
+const findUsers = async (query = '') => {
+  const snapshot = await usersCollection().orderBy('name').limit(50).get()
+  const normalizedQuery = query.trim().toLowerCase()
+  const users = snapshot.docs.map(serializeUser)
+
+  if (!normalizedQuery) {
+    return users
+  }
+
+  return users.filter((user) =>
+    [user.id, user.name, user.role]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(normalizedQuery)),
+  )
+}
+
 const upsertUser = async (user) => {
   const now = admin.firestore.FieldValue.serverTimestamp()
   const userRef = usersCollection().doc(user.id)
@@ -60,4 +76,30 @@ const upsertUser = async (user) => {
   }
 }
 
-module.exports = { findUserById, upsertUser }
+const updateUser = async (userId, userInput) => {
+  const userRef = usersCollection().doc(userId)
+  const snapshot = await userRef.get()
+
+  if (!snapshot.exists) {
+    return null
+  }
+
+  const update = {
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  }
+
+  if (userInput.name) {
+    update.name = userInput.name
+    update.initials = userInput.name.slice(0, 2).toUpperCase()
+  }
+
+  if (userInput.role) {
+    update.role = userInput.role
+  }
+
+  await userRef.update(update)
+
+  return findUserById(userId)
+}
+
+module.exports = { findUserById, findUsers, updateUser, upsertUser }
