@@ -36,6 +36,11 @@ export const cardApi = {
   getBoardCard: (boardId, cardId) => request(`/boards/${boardId}/cards/${cardId}`),
   getBoardCards: (boardId) => request(`/boards/${boardId}/cards`),
   getCards: () => request('/cards'),
+  updateBoardCardOrder: (boardId, cards) =>
+    request(`/boards/${boardId}/cards/order`, {
+      method: 'PUT',
+      body: JSON.stringify({ cards }),
+    }),
   updateBoardCard: (boardId, cardId, card) =>
     request(`/boards/${boardId}/cards/${cardId}`, {
       method: 'PUT',

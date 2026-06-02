@@ -75,6 +75,33 @@ const updateCardForBoard = async (boardId, cardId, userId, cardInput) => {
   })
 }
 
+const updateCardOrderForBoard = async (boardId, userId, orderedCards) => {
+  const board = await ensureBoardAccess(boardId, userId)
+
+  if (!board) {
+    return null
+  }
+
+  const cards = await cardRepository.findCardsByBoardId(boardId)
+  const cardsById = new Map(cards.map((card) => [card.id, card]))
+
+  const normalizedCards = orderedCards
+    .filter((card) => cardsById.has(card.id))
+    .map((card) => {
+      const existingCard = cardsById.get(card.id)
+      const listId = card.listId || existingCard.listId || defaultListId
+
+      return {
+        id: card.id,
+        listId,
+        listName: getListName(board, listId),
+        position: Number.isFinite(card.position) ? card.position : existingCard.position,
+      }
+    })
+
+  return cardRepository.updateCardOrder(boardId, normalizedCards)
+}
+
 const deleteCardForBoard = async (boardId, cardId, userId) => {
   const board = await ensureBoardAccess(boardId, userId)
 
@@ -98,5 +125,6 @@ module.exports = {
   getCardForBoard,
   getCardsForBoard,
   getCardsForUser,
+  updateCardOrderForBoard,
   updateCardForBoard,
 }
