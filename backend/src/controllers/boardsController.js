@@ -59,6 +59,7 @@ const updateBoard = async (req, res, next) => {
   try {
     const board = await boardsService.updateBoard(req.params.id, req.user.id, {
       description: req.body.description,
+      lists: req.body.lists,
       name: req.body.name.trim(),
     })
 

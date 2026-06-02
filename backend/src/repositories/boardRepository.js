@@ -3,29 +3,50 @@ const { admin, getFirestore } = require('../config/firebase')
 const boardsCollection = () => getFirestore().collection('boards')
 
 const defaultLists = [
-  { id: 'icebox', name: 'Icebox' },
-  { id: 'backlog', name: 'Backlog' },
-  { id: 'doing', name: 'Doing' },
-  { id: 'review', name: 'Review' },
-  { id: 'done', name: 'Done' },
+  { id: 'today', name: 'Today' },
+  { id: 'tomorrow', name: 'Tomorrow' },
+  { id: 'this-week', name: 'This Week' },
+  { id: 'later', name: 'Later' },
 ]
 
 const normalizeList = (list) => {
-  if (list.id === 'planning' || list.name === 'Planning') {
-    return { id: 'backlog', name: 'Backlog' }
+  return {
+    id: list.id || 'list',
+    name: list.name || 'List',
   }
-
-  return list
 }
 
 const hydrateLists = (lists = defaultLists) => {
   const normalizedLists = lists.map(normalizeList)
 
-  return defaultLists.map((defaultList) => {
-    const existingList = normalizedLists.find((list) => list.id === defaultList.id)
+  return normalizedLists.filter(
+    (list, index) => normalizedLists.findIndex((item) => item.id === list.id) === index,
+  )
+}
 
-    return existingList || defaultList
-  })
+const sanitizeLists = (lists) => {
+  if (!Array.isArray(lists)) {
+    return defaultLists
+  }
+
+  const cleanedLists = lists
+    .map((list) => ({
+      id: String(list.id || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9-]+/g, '-')
+        .replace(/^-|-$/g, ''),
+      name: String(list.name || '').trim(),
+    }))
+    .filter((list) => list.id && list.name)
+
+  if (cleanedLists.length === 0) {
+    return defaultLists
+  }
+
+  return cleanedLists.filter(
+    (list, index) => cleanedLists.findIndex((item) => item.id === list.id) === index,
+  )
 }
 
 const serializeBoard = (snapshot) => {
@@ -82,12 +103,17 @@ const findBoardById = async (boardId) => {
 const updateBoard = async (boardId, boardInput) => {
   const boardRef = boardsCollection().doc(boardId)
   const now = admin.firestore.FieldValue.serverTimestamp()
-
-  await boardRef.update({
+  const updates = {
     description: boardInput.description || '',
     name: boardInput.name,
     updatedAt: now,
-  })
+  }
+
+  if (boardInput.lists !== undefined) {
+    updates.lists = sanitizeLists(boardInput.lists)
+  }
+
+  await boardRef.update(updates)
 
   const snapshot = await boardRef.get()
   return serializeBoard(snapshot)

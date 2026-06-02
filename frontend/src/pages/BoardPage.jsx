@@ -25,9 +25,8 @@ export function BoardPage({ isAuthenticated }) {
         selectedBoardId={selectedBoardId}
       />
       <CardManager
-        boards={boards}
         isAuthenticated={isAuthenticated}
-        onSelectBoard={setSelectedBoardId}
+        onBoardsChange={setBoards}
         selectedBoard={selectedBoard}
       />
     </main>

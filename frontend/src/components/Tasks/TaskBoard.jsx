@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useDrag, useDrop } from 'react-dnd'
 import { socket } from '../../services/realtime'
 import { taskApi } from '../../services/taskApi'
-
-const taskType = 'task'
 
 const statuses = [
   { id: 'icebox', name: 'Icebox' },
@@ -24,23 +21,22 @@ const emptyTaskForm = {
   title: '',
 }
 
-function TaskCard({ task, onDelete, onEdit, onMove }) {
-  const [{ isDragging }, dragRef] = useDrag({
-    type: taskType,
-    item: task,
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  })
+const getStatusName = (statusId) =>
+  statuses.find((status) => status.id === statusId)?.name || 'Icebox'
 
+function TaskCard({ task, onDelete, onEdit, onMove }) {
   return (
-    <article ref={dragRef} className="task-item" style={{ opacity: isDragging ? 0.5 : 1 }}>
+    <article className="task-item">
       <div className="task-item-header">
         <strong>{task.title}</strong>
-        <span>{task.priority}</span>
+        <span className="task-priority-badge">{task.priority}</span>
       </div>
       {task.description ? <p>{task.description}</p> : null}
       <dl>
+        <div>
+          <dt>Status</dt>
+          <dd>{getStatusName(task.status)}</dd>
+        </div>
         <div>
           <dt>Assignee</dt>
           <dd>{task.assigneeId || 'Unassigned'}</dd>
@@ -72,37 +68,11 @@ function TaskCard({ task, onDelete, onEdit, onMove }) {
   )
 }
 
-function TaskColumn({ status, tasks, onDelete, onEdit, onMove }) {
-  const [{ isOver }, dropRef] = useDrop({
-    accept: taskType,
-    drop: (item) => {
-      if (item.status !== status.id) {
-        onMove(item, status.id)
-      }
-    },
-    collect: (monitor) => ({
-      isOver: monitor.isOver(),
-    }),
-  })
-
-  return (
-    <section ref={dropRef} className={`task-column ${isOver ? 'is-over' : ''}`}>
-      <h4>{status.name}</h4>
-      {tasks.length === 0 ? <p>No tasks</p> : null}
-      {tasks.map((task) => (
-        <TaskCard
-          key={task.id}
-          task={task}
-          onDelete={onDelete}
-          onEdit={onEdit}
-          onMove={onMove}
-        />
-      ))}
-    </section>
-  )
-}
-
-export function TaskBoard({ boardId, cardId }) {
+export function TaskBoard({
+  boardId,
+  cardId,
+  onTasksChange,
+}) {
   const [error, setError] = useState('')
   const [form, setForm] = useState(emptyTaskForm)
   const [isEditing, setIsEditing] = useState(false)
@@ -152,6 +122,7 @@ export function TaskBoard({ boardId, cardId }) {
     socket.on('tasks:changed', (payload) => {
       if (payload.boardId === boardId && payload.cardId === cardId) {
         setTasks(payload.tasks)
+        onTasksChange?.()
       }
     })
 
@@ -160,7 +131,7 @@ export function TaskBoard({ boardId, cardId }) {
       socket.emit('tasks:leave', { boardId, cardId })
       socket.off('tasks:changed')
     }
-  }, [boardId, cardId])
+  }, [boardId, cardId, onTasksChange])
 
   const handleChange = (event) => {
     setForm((current) => ({
@@ -191,6 +162,7 @@ export function TaskBoard({ boardId, cardId }) {
 
       resetForm()
       await loadTasks()
+      onTasksChange?.()
     } catch (err) {
       setError(err.message)
     }
@@ -213,6 +185,7 @@ export function TaskBoard({ boardId, cardId }) {
     try {
       await taskApi.deleteTask(boardId, cardId, taskId)
       await loadTasks()
+      onTasksChange?.()
     } catch (err) {
       setError(err.message)
     }
@@ -233,6 +206,7 @@ export function TaskBoard({ boardId, cardId }) {
         title: task.title,
       })
       await loadTasks()
+      onTasksChange?.()
     } catch (err) {
       setError(err.message)
     }
@@ -250,93 +224,98 @@ export function TaskBoard({ boardId, cardId }) {
 
       {error ? <p className="inline-error">{error}</p> : null}
 
-      <form className="task-form task-composer-card" onSubmit={handleSubmit}>
-        <label>
-          Task
-          <input
-            aria-label="Task title"
-            name="title"
-            placeholder="Task title"
-            value={form.title}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Status
-          <select
-            aria-label="Task status"
-            name="status"
-            value={form.status}
-            onChange={handleChange}
-          >
-            {statuses.map((status) => (
-              <option key={status.id} value={status.id}>
-                {status.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Priority
-          <select
-            aria-label="Task priority"
-            name="priority"
-            value={form.priority}
-            onChange={handleChange}
-          >
-            {priorities.map((priority) => (
-              <option key={priority} value={priority}>
-                {priority}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Assignee
-          <input
-            aria-label="Task assignee"
-            name="assigneeId"
-            placeholder="Display name or user id"
-            value={form.assigneeId}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Deadline
-          <input
-            aria-label="Task deadline"
-            name="deadline"
-            type="date"
-            value={form.deadline}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Details
-          <textarea
-            aria-label="Task description"
-            name="description"
-            placeholder="Task details"
-            value={form.description}
-            onChange={handleChange}
-          />
-        </label>
-        <div className="form-actions">
-          <button type="submit">{isEditing ? 'Save task' : 'Create task'}</button>
-          {isEditing ? (
-            <button type="button" onClick={resetForm}>
+      {isEditing ? (
+        <form className="task-form task-composer-card" onSubmit={handleSubmit}>
+          <label>
+            Task
+            <input
+              aria-label="Task title"
+              name="title"
+              placeholder="Task title"
+              value={form.title}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Status
+            <select
+              aria-label="Task status"
+              name="status"
+              value={form.status}
+              onChange={handleChange}
+            >
+              {statuses.map((status) => (
+                <option key={status.id} value={status.id}>
+                  {status.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Priority
+            <select
+              aria-label="Task priority"
+              name="priority"
+              value={form.priority}
+              onChange={handleChange}
+            >
+              {priorities.map((priority) => (
+                <option key={priority} value={priority}>
+                  {priority}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Assignee
+            <input
+              aria-label="Task assignee"
+              name="assigneeId"
+              placeholder="Display name or user id"
+              value={form.assigneeId}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Deadline
+            <input
+              aria-label="Task deadline"
+              name="deadline"
+              type="date"
+              value={form.deadline}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Details
+            <textarea
+              aria-label="Task description"
+              name="description"
+              placeholder="Task details"
+              value={form.description}
+              onChange={handleChange}
+            />
+          </label>
+          <div className="form-actions">
+            <button type="submit">{isEditing ? 'Save task' : 'Create task'}</button>
+            <button
+              type="button"
+              onClick={() => {
+                resetForm()
+              }}
+            >
               Cancel
             </button>
-          ) : null}
-        </div>
-      </form>
+          </div>
+        </form>
+      ) : null}
 
-      <div className="task-lanes">
-        {statuses.map((status) => (
-          <TaskColumn
-            key={status.id}
-            status={status}
-            tasks={tasks.filter((task) => task.status === status.id)}
+      <div className="task-list">
+        {tasks.length === 0 ? <p className="empty-list-copy">No tasks in this card yet.</p> : null}
+        {tasks.map((task) => (
+          <TaskCard
+            key={task.id}
+            task={task}
             onDelete={handleDelete}
             onEdit={handleEdit}
             onMove={handleMove}

@@ -3,10 +3,6 @@ const { admin, getFirestore } = require('../config/firebase')
 const cardsCollection = (boardId) =>
   getFirestore().collection('boards').doc(boardId).collection('cards')
 
-const normalizeListId = (listId) => (listId === 'planning' ? 'backlog' : listId)
-
-const normalizeListName = (listName) => (listName === 'Planning' ? 'Backlog' : listName)
-
 const serializeCard = (snapshot, boardId) => {
   if (!snapshot.exists) {
     return null
@@ -20,8 +16,9 @@ const serializeCard = (snapshot, boardId) => {
     description: data.description || '',
     id: snapshot.id,
     label: data.label || 'General',
-    listId: normalizeListId(data.listId),
-    listName: normalizeListName(data.listName),
+    listId: data.listId || 'today',
+    listName: data.listName || 'Today',
+    position: Number.isFinite(data.position) ? data.position : 0,
     title: data.title,
   }
 }
@@ -36,6 +33,7 @@ const createCard = async (boardId, cardInput) => {
     label: cardInput.label || 'General',
     listId: cardInput.listId,
     listName: cardInput.listName,
+    position: Number.isFinite(cardInput.position) ? cardInput.position : Date.now(),
     title: cardInput.title,
     updatedAt: now,
   }
@@ -50,6 +48,7 @@ const createCard = async (boardId, cardInput) => {
     label: card.label,
     listId: card.listId,
     listName: card.listName,
+    position: card.position,
     title: card.title,
   }
 }
@@ -84,6 +83,7 @@ const updateCard = async (boardId, cardId, cardInput) => {
     label: cardInput.label || 'General',
     listId: cardInput.listId,
     listName: cardInput.listName,
+    position: Number.isFinite(cardInput.position) ? cardInput.position : 0,
     title: cardInput.title,
     updatedAt: now,
   })

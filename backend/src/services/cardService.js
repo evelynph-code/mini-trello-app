@@ -1,10 +1,10 @@
 const cardRepository = require('../repositories/cardRepository')
 const boardsService = require('./boardsService')
 
-const defaultListId = 'backlog'
+const defaultListId = 'today'
 
 const getListName = (board, listId) =>
-  board.lists.find((list) => list.id === listId)?.name || 'Backlog'
+  board.lists.find((list) => list.id === listId)?.name || 'Today'
 
 const ensureBoardAccess = async (boardId, userId) => boardsService.getBoard(boardId, userId)
 
@@ -45,6 +45,7 @@ const createCardForBoard = async (boardId, userId, cardInput) => {
     label: cardInput.label,
     listId,
     listName: getListName(board, listId),
+    position: cardInput.position,
     title: cardInput.title,
   })
 }
@@ -69,6 +70,7 @@ const updateCardForBoard = async (boardId, cardId, userId, cardInput) => {
     label: cardInput.label,
     listId,
     listName: getListName(board, listId),
+    position: Number.isFinite(cardInput.position) ? cardInput.position : card.position,
     title: cardInput.title,
   })
 }
