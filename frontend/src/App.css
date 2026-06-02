@@ -258,7 +258,7 @@ button:disabled {
   padding: 12px;
 }
 
-.assigned-list span {
+.board-task-list-name {
   color: #246a96;
   font-size: 12px;
   font-weight: 700;
@@ -478,11 +478,39 @@ button:disabled {
 }
 
 .board-task-card {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
   cursor: grab;
+}
+
+.board-task-card:hover,
+.board-task-card.is-open {
+  border-color: #9cc2ee;
+  box-shadow: 0 12px 30px rgba(36, 50, 66, 0.12);
 }
 
 .board-task-card:active {
   cursor: grabbing;
+}
+
+.board-task-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.task-count-badge {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 4px;
+  border-radius: 999px;
+  background: #eef6ff;
+  color: #246a96;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 5px 7px;
 }
 
 .task-card-screen {
@@ -638,14 +666,29 @@ button:disabled {
   padding: 3px 6px;
 }
 
-.task-priority-badge {
+.task-status-badge {
+  background: #eef2ff;
+  color: #3730a3;
+}
+
+.priority-low {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.priority-medium {
   background: #f0f7ff;
   color: #246a96;
 }
 
-.task-status-badge {
-  background: #eef2ff;
-  color: #3730a3;
+.priority-high {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.priority-urgent {
+  background: #fee2e2;
+  color: #b42318;
 }
 
 .status-icebox {
@@ -696,14 +739,56 @@ button:disabled {
 }
 
 .task-item dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   color: var(--text-muted);
   font-size: 12px;
 }
 
 .task-item dd {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
   margin: 0;
   color: var(--text-strong);
   font-size: 13px;
+}
+
+.deadline-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 3px 6px;
+}
+
+.deadline-empty {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.deadline-scheduled {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.deadline-soon {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.deadline-today {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+.deadline-overdue {
+  background: #fee2e2;
+  color: #b42318;
 }
 
 .inline-error {

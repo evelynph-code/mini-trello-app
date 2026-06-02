@@ -1,6 +1,9 @@
 const { emitBoardChanged, emitTasksChanged } = require('../realtime/socket')
 const taskService = require('../services/taskService')
 
+const allowedPriorities = ['low', 'medium', 'high', 'urgent']
+const allowedStatuses = ['icebox', 'backlog', 'on-going', 'waiting-review', 'done']
+
 const emitTaskEvents = async (boardId, cardId, userId) => {
   const tasks = await taskService.getTasks(boardId, cardId, userId)
 
@@ -20,6 +23,14 @@ const emitTaskEvents = async (boardId, cardId, userId) => {
 const validateTaskInput = (body) => {
   if (!body.title || !body.title.trim()) {
     return 'Task title is required.'
+  }
+
+  if (body.priority && !allowedPriorities.includes(body.priority)) {
+    return 'Task priority is invalid.'
+  }
+
+  if (body.status && !allowedStatuses.includes(body.status)) {
+    return 'Task status is invalid.'
   }
 
   return null

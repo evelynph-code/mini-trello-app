@@ -1,4 +1,4 @@
-import { Pencil, Plus, Trash2, X } from 'lucide-react'
+import { CalendarDays, Flag, Pencil, Plus, Trash2, UserRound, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { socket } from '../../services/realtime'
 import { taskApi } from '../../services/taskApi'
@@ -26,7 +26,47 @@ const emptyTaskForm = {
 const getStatusName = (statusId) =>
   statuses.find((status) => status.id === statusId)?.name || 'Icebox'
 
+const formatDeadline = (deadline) => {
+  if (!deadline) {
+    return 'No deadline'
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(`${deadline}T00:00:00`))
+}
+
+const getDeadlineState = (deadline, status) => {
+  if (!deadline || status === 'done') {
+    return { className: 'deadline-empty', label: deadline ? 'Completed' : 'No deadline' }
+  }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const deadlineDate = new Date(`${deadline}T00:00:00`)
+  const dayDifference = Math.round((deadlineDate - today) / 86400000)
+
+  if (dayDifference < 0) {
+    return { className: 'deadline-overdue', label: 'Overdue' }
+  }
+
+  if (dayDifference === 0) {
+    return { className: 'deadline-today', label: 'Due today' }
+  }
+
+  if (dayDifference <= 2) {
+    return { className: 'deadline-soon', label: 'Due soon' }
+  }
+
+  return { className: 'deadline-scheduled', label: 'Scheduled' }
+}
+
 function TaskCard({ task, onDelete, onEdit, onMove }) {
+  const deadlineState = getDeadlineState(task.deadline, task.status)
+
   return (
     <article className="task-item">
       <div className="task-item-header">
@@ -35,22 +75,38 @@ function TaskCard({ task, onDelete, onEdit, onMove }) {
           <span className={`task-status-badge status-${task.status || 'icebox'}`}>
             {getStatusName(task.status)}
           </span>
-          <span className="task-priority-badge">{task.priority}</span>
+          <span className={`task-priority-badge priority-${task.priority || 'medium'}`}>
+            {task.priority || 'medium'}
+          </span>
         </div>
       </div>
       {task.description ? <p>{task.description}</p> : null}
       <dl>
         <div>
-          <dt>Status</dt>
+          <dt>
+            <Flag size={13} />
+            Status
+          </dt>
           <dd>{getStatusName(task.status)}</dd>
         </div>
         <div>
-          <dt>Assignee</dt>
+          <dt>
+            <UserRound size={13} />
+            Assignee
+          </dt>
           <dd>{task.assigneeId || 'Unassigned'}</dd>
         </div>
         <div>
-          <dt>Deadline</dt>
-          <dd>{task.deadline || 'No deadline'}</dd>
+          <dt>
+            <CalendarDays size={13} />
+            Deadline
+          </dt>
+          <dd>
+            <span className={`deadline-pill ${deadlineState.className}`}>
+              {deadlineState.label}
+            </span>
+            <span>{formatDeadline(task.deadline)}</span>
+          </dd>
         </div>
       </dl>
       <label className="move-card-control">
