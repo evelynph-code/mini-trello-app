@@ -1,4 +1,19 @@
+const { emitBoardChanged } = require('../realtime/socket')
 const cardService = require('../services/cardService')
+
+const emitCardsChanged = async (boardId, userId) => {
+  const cards = await cardService.getCardsForBoard(boardId, userId)
+
+  if (!cards) {
+    return
+  }
+
+  emitBoardChanged(boardId, {
+    boardId,
+    cards,
+    resource: 'cards',
+  })
+}
 
 const getCardsForUser = async (req, res, next) => {
   try {
@@ -41,7 +56,7 @@ const getBoardCard = async (req, res, next) => {
 }
 
 const createBoardCard = async (req, res, next) => {
-  const { title, description, label, listId } = req.body
+  const { title, description, label, listId, position } = req.body
 
   if (!title || !title.trim()) {
     return res.status(400).json({ error: 'Card title is required.' })
@@ -52,12 +67,15 @@ const createBoardCard = async (req, res, next) => {
       description,
       label,
       listId,
+      position,
       title: title.trim(),
     })
 
     if (!card) {
       return res.status(404).json({ error: 'Board not found.' })
     }
+
+    await emitCardsChanged(req.params.boardId, req.user.id)
 
     return res.status(201).json({ data: card })
   } catch (err) {
@@ -66,7 +84,7 @@ const createBoardCard = async (req, res, next) => {
 }
 
 const updateBoardCard = async (req, res, next) => {
-  const { title, description, label, listId } = req.body
+  const { title, description, label, listId, position } = req.body
 
   if (!title || !title.trim()) {
     return res.status(400).json({ error: 'Card title is required.' })
@@ -81,6 +99,7 @@ const updateBoardCard = async (req, res, next) => {
         description,
         label,
         listId,
+        position,
         title: title.trim(),
       },
     )
@@ -88,6 +107,8 @@ const updateBoardCard = async (req, res, next) => {
     if (!card) {
       return res.status(404).json({ error: 'Card not found.' })
     }
+
+    await emitCardsChanged(req.params.boardId, req.user.id)
 
     return res.json({ data: card })
   } catch (err) {
@@ -106,6 +127,8 @@ const deleteBoardCard = async (req, res, next) => {
     if (!card) {
       return res.status(404).json({ error: 'Card not found.' })
     }
+
+    await emitCardsChanged(req.params.boardId, req.user.id)
 
     return res.status(204).send()
   } catch (err) {

@@ -1,5 +1,21 @@
-const { emitTasksChanged } = require('../realtime/socket')
+const { emitBoardChanged, emitTasksChanged } = require('../realtime/socket')
 const taskService = require('../services/taskService')
+
+const emitTaskEvents = async (boardId, cardId, userId) => {
+  const tasks = await taskService.getTasks(boardId, cardId, userId)
+
+  emitTasksChanged(boardId, cardId, {
+    boardId,
+    cardId,
+    tasks,
+  })
+  emitBoardChanged(boardId, {
+    boardId,
+    cardId,
+    resource: 'tasks',
+    tasks,
+  })
+}
 
 const validateTaskInput = (body) => {
   if (!body.title || !body.title.trim()) {
@@ -74,12 +90,7 @@ const createTask = async (req, res, next) => {
       return res.status(404).json({ error: 'Card not found.' })
     }
 
-    const tasks = await taskService.getTasks(req.params.boardId, req.params.cardId, req.user.id)
-    emitTasksChanged(req.params.boardId, req.params.cardId, {
-      boardId: req.params.boardId,
-      cardId: req.params.cardId,
-      tasks,
-    })
+    await emitTaskEvents(req.params.boardId, req.params.cardId, req.user.id)
 
     return res.status(201).json({ data: task })
   } catch (err) {
@@ -107,12 +118,7 @@ const updateTask = async (req, res, next) => {
       return res.status(404).json({ error: 'Task not found.' })
     }
 
-    const tasks = await taskService.getTasks(req.params.boardId, req.params.cardId, req.user.id)
-    emitTasksChanged(req.params.boardId, req.params.cardId, {
-      boardId: req.params.boardId,
-      cardId: req.params.cardId,
-      tasks,
-    })
+    await emitTaskEvents(req.params.boardId, req.params.cardId, req.user.id)
 
     return res.json({ data: task })
   } catch (err) {
@@ -133,12 +139,7 @@ const deleteTask = async (req, res, next) => {
       return res.status(404).json({ error: 'Task not found.' })
     }
 
-    const tasks = await taskService.getTasks(req.params.boardId, req.params.cardId, req.user.id)
-    emitTasksChanged(req.params.boardId, req.params.cardId, {
-      boardId: req.params.boardId,
-      cardId: req.params.cardId,
-      tasks,
-    })
+    await emitTaskEvents(req.params.boardId, req.params.cardId, req.user.id)
 
     return res.status(204).send()
   } catch (err) {

@@ -1,3 +1,4 @@
+const { emitBoardChanged } = require('../realtime/socket')
 const boardsService = require('../services/boardsService')
 
 const validateBoardInput = (body) => {
@@ -23,6 +24,12 @@ const getBoard = async (req, res, next) => {
     if (!board) {
       return res.status(404).json({ error: 'Board not found.' })
     }
+
+    emitBoardChanged(req.params.id, {
+      board,
+      boardId: req.params.id,
+      resource: 'board',
+    })
 
     return res.json({ data: board })
   } catch (err) {
