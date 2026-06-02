@@ -3,7 +3,7 @@ import { TaskBoard } from '../Tasks/TaskBoard'
 import { IconButton } from './IconButton'
 import { getListName } from './cardUtils'
 
-export function CardDetailsDialog({ card, onClose, selectedBoard }) {
+export function CardDetailsDialog({ card, onClose, onTasksChange, selectedBoard }) {
   return (
     <div
       className="task-card-screen"
@@ -43,7 +43,7 @@ export function CardDetailsDialog({ card, onClose, selectedBoard }) {
             <dd>{card.description || 'No description'}</dd>
           </div>
         </dl>
-        <TaskBoard boardId={selectedBoard.id} cardId={card.id} />
+        <TaskBoard boardId={selectedBoard.id} cardId={card.id} onTasksChange={onTasksChange} />
       </article>
     </div>
   )

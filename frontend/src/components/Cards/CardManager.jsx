@@ -13,6 +13,9 @@ import {
 import { boardsApi } from '../../services/boardsApi'
 import { cardApi } from '../../services/cardApi'
 import { socket } from '../../services/realtime'
+import { taskApi } from '../../services/taskApi'
+
+const countRemainingTasks = (tasks) => tasks.filter((task) => task.status !== 'done').length
 
 export function CardManager({
   isAuthenticated,
@@ -28,10 +31,16 @@ export function CardManager({
   const [editingListId, setEditingListId] = useState('')
   const [listForm, setListForm] = useState({ name: '' })
   const [selectedCardId, setSelectedCardId] = useState('')
+  const [taskCounts, setTaskCounts] = useState({})
   const cardsRef = useRef([])
   const listsRef = useRef([])
 
-  const orderedCards = sortCardsByPosition(cards)
+  const orderedCards = sortCardsByPosition(
+    cards.map((card) => ({
+      ...card,
+      taskCount: taskCounts[card.id] || 0,
+    })),
+  )
 
   useEffect(() => {
     cardsRef.current = cards
@@ -52,16 +61,56 @@ export function CardManager({
     })
   }
 
+  const refreshTaskCount = async (cardId) => {
+    if (!selectedBoard || !cardId) {
+      return
+    }
+
+    try {
+      const nextTasks = await taskApi.getTasks(selectedBoard.id, cardId)
+
+      setTaskCounts((currentCounts) => ({
+        ...currentCounts,
+        [cardId]: countRemainingTasks(nextTasks),
+      }))
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const refreshTaskCounts = async (boardId, nextCards) => {
+    if (!boardId || nextCards.length === 0) {
+      setTaskCounts({})
+      return
+    }
+
+    try {
+      const countEntries = await Promise.all(
+        nextCards.map(async (card) => {
+          const nextTasks = await taskApi.getTasks(boardId, card.id)
+
+          return [card.id, countRemainingTasks(nextTasks)]
+        }),
+      )
+
+      setTaskCounts(Object.fromEntries(countEntries))
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   const loadCards = async () => {
     if (!isAuthenticated) {
       setCards([])
       setDetailsCard(null)
+      setTaskCounts({})
       return
     }
 
     if (!selectedBoard) {
       setCards([])
       setDetailsCard(null)
+      setTaskCounts({})
       return
     }
 
@@ -72,6 +121,7 @@ export function CardManager({
       const nextCards = await cardApi.getBoardCards(selectedBoard.id)
 
       applyRemoteCards(nextCards)
+      await refreshTaskCounts(selectedBoard.id, nextCards)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -90,12 +140,14 @@ export function CardManager({
       if (!isAuthenticated) {
         setCards([])
         setDetailsCard(null)
+        setTaskCounts({})
         return
       }
 
       if (!selectedBoard) {
         setCards([])
         setDetailsCard(null)
+        setTaskCounts({})
         return
       }
 
@@ -107,6 +159,7 @@ export function CardManager({
 
         if (isMounted) {
           applyRemoteCards(nextCards)
+          await refreshTaskCounts(selectedBoard.id, nextCards)
         }
       } catch (err) {
         if (isMounted) {
@@ -142,6 +195,14 @@ export function CardManager({
 
       if (payload.cards) {
         applyRemoteCards(payload.cards)
+        refreshTaskCounts(selectedBoard.id, payload.cards)
+      }
+
+      if (payload.resource === 'tasks' && payload.cardId && payload.tasks) {
+        setTaskCounts((currentCounts) => ({
+          ...currentCounts,
+          [payload.cardId]: countRemainingTasks(payload.tasks),
+        }))
       }
     }
 
@@ -491,6 +552,7 @@ export function CardManager({
             <CardDetailsDialog
               card={detailsCard}
               onClose={() => setDetailsCard(null)}
+              onTasksChange={() => refreshTaskCount(detailsCard.id)}
               selectedBoard={selectedBoard}
             />
           ) : null}
