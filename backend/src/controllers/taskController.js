@@ -1,3 +1,5 @@
+const cardActivityController = require('./cardActivityController')
+const cardActivityService = require('../services/cardActivityService')
 const { emitBoardChanged, emitTasksChanged } = require('../realtime/socket')
 const taskService = require('../services/taskService')
 
@@ -18,6 +20,7 @@ const emitTaskEvents = async (boardId, cardId, userId) => {
     resource: 'tasks',
     tasks,
   })
+  await cardActivityController.emitCardDetails(boardId, cardId, userId)
 }
 
 const validateTaskInput = (body) => {
@@ -101,6 +104,12 @@ const createTask = async (req, res, next) => {
       return res.status(404).json({ error: 'Card not found.' })
     }
 
+    await cardActivityService.addActivity(req.params.boardId, req.params.cardId, req.user, {
+      message: `${req.user.name || 'Someone'} created task ${task.title}`,
+      taskId: task.id,
+      taskTitle: task.title,
+      type: 'task-created',
+    })
     await emitTaskEvents(req.params.boardId, req.params.cardId, req.user.id)
 
     return res.status(201).json({ data: task })
@@ -117,6 +126,12 @@ const updateTask = async (req, res, next) => {
   }
 
   try {
+    const previousTask = await taskService.getTask(
+      req.params.boardId,
+      req.params.cardId,
+      req.params.taskId,
+      req.user.id,
+    )
     const task = await taskService.updateTask(
       req.params.boardId,
       req.params.cardId,
@@ -129,6 +144,16 @@ const updateTask = async (req, res, next) => {
       return res.status(404).json({ error: 'Task not found.' })
     }
 
+    const didCompleteTask = previousTask?.status !== 'done' && task.status === 'done'
+
+    await cardActivityService.addActivity(req.params.boardId, req.params.cardId, req.user, {
+      message: didCompleteTask
+        ? `${req.user.name || 'Someone'} marked ${task.title} as done`
+        : `${req.user.name || 'Someone'} updated task ${task.title}`,
+      taskId: task.id,
+      taskTitle: task.title,
+      type: didCompleteTask ? 'task-completed' : 'task-updated',
+    })
     await emitTaskEvents(req.params.boardId, req.params.cardId, req.user.id)
 
     return res.json({ data: task })
@@ -150,6 +175,12 @@ const deleteTask = async (req, res, next) => {
       return res.status(404).json({ error: 'Task not found.' })
     }
 
+    await cardActivityService.addActivity(req.params.boardId, req.params.cardId, req.user, {
+      message: `${req.user.name || 'Someone'} deleted task ${task.title}`,
+      taskId: task.id,
+      taskTitle: task.title,
+      type: 'task-deleted',
+    })
     await emitTaskEvents(req.params.boardId, req.params.cardId, req.user.id)
 
     return res.status(204).send()
