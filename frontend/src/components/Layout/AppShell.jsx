@@ -41,15 +41,37 @@ export function AppShell({
         </nav>
         <div className="auth-panel">
           {isAuthenticated ? (
+            <div className="signed-in-user">
+              {currentUser.avatarUrl ? (
+                <img alt="" className="profile-avatar" src={currentUser.avatarUrl} />
+              ) : (
+                <span aria-hidden="true" className="profile-avatar-fallback">
+                  {currentUser.initials}
+                </span>
+              )}
+              <div>
+                <strong>{currentUser.name}</strong>
+                <p>{currentUser.role}</p>
+              </div>
+            </div>
+          ) : (
+            <p>Guest workspace</p>
+          )}
+          {isAuthenticated ? (
             <div className="notification-menu">
               <button
                 type="button"
-                className="notification-button"
+                aria-label="Notifications"
+                className="notification-button topbar-icon-button"
+                title="Notifications"
                 onClick={() => setIsNotificationsOpen((isOpen) => !isOpen)}
               >
-                <Bell size={16} />
-                Notifications
-                {notifications.length > 0 ? <span>{notifications.length}</span> : null}
+                <Bell size={18} />
+                {notifications.length > 0 ? (
+                  <span aria-label={`${notifications.length} unread notifications`}>
+                    {notifications.length}
+                  </span>
+                ) : null}
               </button>
               {isNotificationsOpen ? (
                 <div className="notification-popover">
@@ -91,23 +113,6 @@ export function AppShell({
               ) : null}
             </div>
           ) : null}
-          {isAuthenticated ? (
-            <div className="signed-in-user">
-              {currentUser.avatarUrl ? (
-                <img alt="" className="profile-avatar" src={currentUser.avatarUrl} />
-              ) : (
-                <span aria-hidden="true" className="profile-avatar-fallback">
-                  {currentUser.initials}
-                </span>
-              )}
-              <div>
-                <strong>{currentUser.name}</strong>
-                <p>{currentUser.role}</p>
-              </div>
-            </div>
-          ) : (
-            <p>Guest workspace</p>
-          )}
           {authError ? <p className="auth-error">{authError}</p> : null}
           {isAuthenticated ? (
             <button

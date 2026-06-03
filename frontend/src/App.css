@@ -93,16 +93,23 @@ button:hover {
 }
 
 .notification-button span {
-  display: inline-grid;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: grid;
   place-items: center;
   min-width: 18px;
   height: 18px;
+  padding: 0 5px;
   border-radius: 999px;
   background: #9ee7ff;
   color: #0f315a;
+  font-size: 11px;
+  line-height: 1;
 }
 
 .notification-button {
+  position: relative;
   border-color: rgba(158, 231, 255, 0.5);
   background: #e7f6ff;
   color: #0f4c81;
