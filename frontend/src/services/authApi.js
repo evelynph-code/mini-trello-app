@@ -19,10 +19,33 @@ const request = async (path, options = {}) => {
 }
 
 export const authApi = {
+  deleteAccount: () =>
+    request('/auth/me', {
+      method: 'DELETE',
+    }),
   getCurrentUser: () => request('/auth/me'),
   getGitHubLoginUrl: () => `${API_BASE_URL}/auth/github`,
+  login: (credentials) =>
+    request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    }),
   logout: () =>
     request('/auth/logout', {
       method: 'POST',
+    }),
+  register: (account) =>
+    request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(account),
+    }),
+  resendVerificationEmail: () =>
+    request('/auth/verification-email', {
+      method: 'POST',
+    }),
+  verifyEmail: (code) =>
+    request('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
     }),
 }

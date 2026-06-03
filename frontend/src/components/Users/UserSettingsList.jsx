@@ -1,14 +1,22 @@
-import { Pencil, Save, X } from 'lucide-react'
+import { LogOut, Mail, Pencil, Save, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { usersApi } from '../../services/usersApi'
 import { IconButton } from '../Cards/IconButton'
 
-export function UserSettingsList({ currentUser, onUserChange }) {
+export function UserSettingsList({
+  currentUser,
+  onDeleteAccount,
+  onResendVerificationEmail,
+  onSignOut,
+  onUserChange,
+}) {
   const [displayName, setDisplayName] = useState(currentUser.name || '')
   const [error, setError] = useState('')
   const [isEditingName, setIsEditingName] = useState(false)
   const [isEditingRole, setIsEditingRole] = useState(false)
+  const [isSendingVerification, setIsSendingVerification] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [notice, setNotice] = useState('')
   const [role, setRole] = useState(currentUser.role || '')
 
   const saveUser = async (userInput) => {
@@ -64,6 +72,32 @@ export function UserSettingsList({ currentUser, onUserChange }) {
     setIsEditingRole(false)
   }
 
+  const handleDeleteAccount = () => {
+    const shouldDelete = window.confirm(
+      'Delete your account? This will remove your profile and sign you out.',
+    )
+
+    if (shouldDelete) {
+      onDeleteAccount()
+    }
+  }
+
+  const handleResendVerificationEmail = async () => {
+    setError('')
+    setNotice('')
+    setIsSendingVerification(true)
+
+    try {
+      const result = await onResendVerificationEmail()
+
+      setNotice(result.message || 'Verification email sent. Check your inbox.')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setIsSendingVerification(false)
+    }
+  }
+
   return (
     <div className="user-settings-list">
       <div className="profile-heading">
@@ -79,6 +113,7 @@ export function UserSettingsList({ currentUser, onUserChange }) {
       </div>
 
       {error ? <p className="inline-error">{error}</p> : null}
+      {notice ? <p className="inline-success">{notice}</p> : null}
 
       <article className="user-setting-row">
         <div>
@@ -132,6 +167,40 @@ export function UserSettingsList({ currentUser, onUserChange }) {
         </div>
       </article>
 
+      {currentUser.provider === 'local' ? (
+        <>
+          <article className="user-setting-row">
+            <div>
+              <p className="eyebrow">Email</p>
+              <h3>Login email</h3>
+            </div>
+            <div className="user-setting-value">
+              <strong>{currentUser.email}</strong>
+            </div>
+          </article>
+
+          <article className="user-setting-row">
+            <div>
+              <p className="eyebrow">Verification</p>
+              <h3>Email status</h3>
+            </div>
+            <div className="user-setting-value">
+              <strong>{currentUser.emailVerified ? 'Verified' : 'Pending'}</strong>
+              {!currentUser.emailVerified ? (
+                <button
+                  type="button"
+                  disabled={isSendingVerification}
+                  onClick={handleResendVerificationEmail}
+                >
+                  <Mail size={15} />
+                  {isSendingVerification ? 'Sending' : 'Resend'}
+                </button>
+              ) : null}
+            </div>
+          </article>
+        </>
+      ) : null}
+
       <article className="user-setting-row">
         <div>
           <p className="eyebrow">Access</p>
@@ -162,6 +231,32 @@ export function UserSettingsList({ currentUser, onUserChange }) {
             </IconButton>
           </div>
         )}
+      </article>
+
+      <article className="user-setting-row">
+        <div>
+          <p className="eyebrow">Session</p>
+          <h3>Sign out</h3>
+        </div>
+        <div className="user-setting-value">
+          <button type="button" onClick={onSignOut}>
+            <LogOut size={15} />
+            Sign out
+          </button>
+        </div>
+      </article>
+
+      <article className="user-setting-row account-danger-row">
+        <div>
+          <p className="eyebrow">Danger zone</p>
+          <h3>Delete account</h3>
+        </div>
+        <div className="user-setting-value">
+          <button type="button" className="danger-action-button" onClick={handleDeleteAccount}>
+            <Trash2 size={15} />
+            Delete account
+          </button>
+        </div>
       </article>
     </div>
   )

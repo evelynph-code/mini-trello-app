@@ -55,11 +55,15 @@ const serializeBoard = (snapshot) => {
   }
 
   const data = snapshot.data()
+  const memberIds = [data.ownerId, ...(Array.isArray(data.memberIds) ? data.memberIds : [])]
+    .filter(Boolean)
+    .filter((userId, index, userIds) => userIds.indexOf(userId) === index)
 
   return {
     description: data.description || '',
     id: snapshot.id,
     lists: hydrateLists(data.lists),
+    memberIds,
     name: data.name,
     ownerId: data.ownerId,
   }
@@ -72,6 +76,7 @@ const createBoard = async (ownerId, boardInput) => {
     createdAt: now,
     description: boardInput.description || '',
     lists: defaultLists,
+    memberIds: [ownerId],
     name: boardInput.name,
     ownerId,
     updatedAt: now,
@@ -83,13 +88,26 @@ const createBoard = async (ownerId, boardInput) => {
     description: board.description,
     id: boardRef.id,
     lists: board.lists,
+    memberIds: board.memberIds,
     name: board.name,
     ownerId,
   }
 }
 
-const findBoardsByOwnerId = async (ownerId) => {
-  const snapshot = await boardsCollection().where('ownerId', '==', ownerId).get()
+const findBoardsByUserId = async (userId) => {
+  const [ownedSnapshot, memberSnapshot] = await Promise.all([
+    boardsCollection().where('ownerId', '==', userId).get(),
+    boardsCollection().where('memberIds', 'array-contains', userId).get(),
+  ])
+  const boards = [...ownedSnapshot.docs, ...memberSnapshot.docs].map(serializeBoard)
+
+  return boards.filter(
+    (board, index) => boards.findIndex((item) => item.id === board.id) === index,
+  )
+}
+
+const findBoardsOwnedByUserId = async (userId) => {
+  const snapshot = await boardsCollection().where('ownerId', '==', userId).get()
 
   return snapshot.docs.map(serializeBoard)
 }
@@ -119,14 +137,78 @@ const updateBoard = async (boardId, boardInput) => {
   return serializeBoard(snapshot)
 }
 
+const addBoardMember = async (boardId, userId) => {
+  const boardRef = boardsCollection().doc(boardId)
+
+  await boardRef.update({
+    memberIds: admin.firestore.FieldValue.arrayUnion(userId),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  })
+
+  return findBoardById(boardId)
+}
+
 const deleteBoard = async (boardId) => {
   await boardsCollection().doc(boardId).delete()
 }
 
+const deleteSnapshotDocs = async (snapshot) => {
+  if (snapshot.empty) {
+    return
+  }
+
+  const batchSize = 450
+
+  for (let index = 0; index < snapshot.docs.length; index += batchSize) {
+    const batch = getFirestore().batch()
+
+    snapshot.docs.slice(index, index + batchSize).forEach((doc) => {
+      batch.delete(doc.ref)
+    })
+
+    await batch.commit()
+  }
+}
+
+const deleteCardSubcollections = async (cardRef) => {
+  const [tasksSnapshot, commentsSnapshot, activitiesSnapshot] = await Promise.all([
+    cardRef.collection('tasks').get(),
+    cardRef.collection('comments').get(),
+    cardRef.collection('activities').get(),
+  ])
+
+  await Promise.all([
+    deleteSnapshotDocs(tasksSnapshot),
+    deleteSnapshotDocs(commentsSnapshot),
+    deleteSnapshotDocs(activitiesSnapshot),
+  ])
+}
+
+const deleteBoardCascade = async (boardId) => {
+  const boardRef = boardsCollection().doc(boardId)
+  const cardsSnapshot = await boardRef.collection('cards').get()
+
+  await Promise.all(cardsSnapshot.docs.map((cardDoc) => deleteCardSubcollections(cardDoc.ref)))
+  await deleteSnapshotDocs(cardsSnapshot)
+  await boardRef.delete()
+}
+
+const deleteBoardsOwnedByUserId = async (userId) => {
+  const boards = await findBoardsOwnedByUserId(userId)
+
+  await Promise.all(boards.map((board) => deleteBoardCascade(board.id)))
+
+  return boards.length
+}
+
 module.exports = {
+  addBoardMember,
   createBoard,
   deleteBoard,
+  deleteBoardCascade,
+  deleteBoardsOwnedByUserId,
   findBoardById,
-  findBoardsByOwnerId,
+  findBoardsOwnedByUserId,
+  findBoardsByUserId,
   updateBoard,
 }

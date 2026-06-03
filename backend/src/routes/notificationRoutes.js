@@ -1,13 +1,12 @@
 const express = require('express')
-const userController = require('../controllers/userController')
+const notificationController = require('../controllers/notificationController')
 const { requireAuth } = require('../middleware/requireAuth')
 const { requireVerifiedEmail } = require('../middleware/requireVerifiedEmail')
 
 const router = express.Router()
 
 router.use(requireAuth, requireVerifiedEmail)
-router.get('/', userController.getUsers)
-router.get('/:id', userController.getUser)
-router.patch('/:id', userController.updateUser)
+router.get('/', notificationController.getNotifications)
+router.patch('/:id/read', notificationController.markNotificationRead)
 
 module.exports = router

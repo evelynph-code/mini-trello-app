@@ -1,3 +1,6 @@
+import { Bell, LogOut } from 'lucide-react'
+import { useState } from 'react'
+
 export function AppShell({
   authError,
   children,
@@ -5,9 +8,14 @@ export function AppShell({
   isAuthenticated,
   isSignInDisabled,
   activePage,
+  notifications = [],
   onNavigate,
+  onNotificationRead,
+  onRespondToInvitation,
   onToggleAuth,
 }) {
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+
   return (
     <div className="app-shell">
       <header className="topbar" aria-label="Application navigation">
@@ -49,10 +57,79 @@ export function AppShell({
           ) : (
             <p>Guest workspace</p>
           )}
+          {isAuthenticated ? (
+            <div className="notification-menu">
+              <button
+                type="button"
+                aria-label="Notifications"
+                className="notification-button topbar-icon-button"
+                title="Notifications"
+                onClick={() => setIsNotificationsOpen((isOpen) => !isOpen)}
+              >
+                <Bell size={18} />
+                {notifications.length > 0 ? (
+                  <span aria-label={`${notifications.length} unread notifications`}>
+                    {notifications.length}
+                  </span>
+                ) : null}
+              </button>
+              {isNotificationsOpen ? (
+                <div className="notification-popover">
+                  <h3>Notifications</h3>
+                  {notifications.length === 0 ? (
+                    <p>No notifications.</p>
+                  ) : (
+                    notifications.map((notification) => (
+                      <article key={notification.id}>
+                        <p>
+                          <strong>{notification.title}</strong>
+                          <br />
+                          {notification.message}
+                        </p>
+                        {notification.type === 'board-invitation' ? (
+                          <div className="form-actions">
+                            <button
+                              type="button"
+                              onClick={() => onRespondToInvitation(notification.id, 'accepted')}
+                            >
+                              Accept
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onRespondToInvitation(notification.id, 'declined')}
+                            >
+                              Decline
+                            </button>
+                          </div>
+                        ) : notification.type !== 'task-due-soon' ? (
+                          <button type="button" onClick={() => onNotificationRead(notification.id)}>
+                            Mark read
+                          </button>
+                        ) : null}
+                      </article>
+                    ))
+                  )}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           {authError ? <p className="auth-error">{authError}</p> : null}
-          <button type="button" disabled={isSignInDisabled} onClick={onToggleAuth}>
-            {isAuthenticated ? 'Sign out' : 'Sign in with GitHub'}
-          </button>
+          {isAuthenticated ? (
+            <button
+              type="button"
+              aria-label="Sign out"
+              className="topbar-icon-button"
+              disabled={isSignInDisabled}
+              title="Sign out"
+              onClick={onToggleAuth}
+            >
+              <LogOut size={18} />
+            </button>
+          ) : (
+            <button type="button" disabled={isSignInDisabled} onClick={onToggleAuth}>
+              Sign in with GitHub
+            </button>
+          )}
         </div>
       </header>
       <div className="dashboard-shell">{children}</div>

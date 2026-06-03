@@ -1,11 +1,12 @@
 import { X } from 'lucide-react'
+import { createPortal } from 'react-dom'
 import { CommentActivityPanel } from '../Tasks/CommentActivityPanel'
 import { TaskBoard } from '../Tasks/TaskBoard'
 import { IconButton } from './IconButton'
 import { getListName } from './cardUtils'
 
-export function CardDetailsDialog({ card, onClose, onTasksChange, selectedBoard }) {
-  return (
+export function CardDetailsDialog({ card, currentUser, onClose, onTasksChange, selectedBoard }) {
+  return createPortal(
     <div
       className="task-card-screen"
       role="presentation"
@@ -25,12 +26,13 @@ export function CardDetailsDialog({ card, onClose, onTasksChange, selectedBoard 
           <div>
             <p className="eyebrow">Task card</p>
             <h3 id="task-card-title">{card.title}</h3>
+            <p>{card.description || 'No description'}</p>
           </div>
           <IconButton label="Close task card" onClick={onClose}>
             <X size={17} />
           </IconButton>
         </div>
-        <dl>
+        <dl className="card-details-meta">
           <div>
             <dt>Board block</dt>
             <dd>{getListName(selectedBoard.lists, card.listId, card.listName)}</dd>
@@ -44,10 +46,17 @@ export function CardDetailsDialog({ card, onClose, onTasksChange, selectedBoard 
             <dd>{card.description || 'No description'}</dd>
           </div>
         </dl>
-        <TaskBoard boardId={selectedBoard.id} cardId={card.id} onTasksChange={onTasksChange} />
+        <TaskBoard
+          boardId={selectedBoard.id}
+          cardId={card.id}
+          currentUser={currentUser}
+          onTasksChange={onTasksChange}
+          selectedBoard={selectedBoard}
+        />
         <CommentActivityPanel boardId={selectedBoard.id} cardId={card.id} />
       </article>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -58,7 +67,7 @@ export function EditCardDialog({
   onSubmit,
   selectedBoard,
 }) {
-  return (
+  return createPortal(
     <div
       className="task-card-screen"
       role="presentation"
@@ -125,6 +134,7 @@ export function EditCardDialog({
           </div>
         </form>
       </article>
-    </div>
+    </div>,
+    document.body,
   )
 }

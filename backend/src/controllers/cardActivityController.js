@@ -1,5 +1,6 @@
 const { emitCardDetailsChanged } = require('../realtime/socket')
 const cardActivityService = require('../services/cardActivityService')
+const notificationService = require('../services/notificationService')
 
 const emitCardDetails = async (boardId, cardId, userId) => {
   const details = await cardActivityService.getCardDetails(boardId, cardId, userId)
@@ -57,6 +58,11 @@ const createComment = async (req, res, next) => {
     await cardActivityService.addActivity(req.params.boardId, req.params.cardId, req.user, {
       message: `${req.user.name || 'Someone'} commented`,
       type: 'comment',
+    })
+    await notificationService.notifyTaskCommentByIds({
+      actor: req.user,
+      boardId: req.params.boardId,
+      cardId: req.params.cardId,
     })
     await emitCardDetails(req.params.boardId, req.params.cardId, req.user.id)
 

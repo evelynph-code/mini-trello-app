@@ -10,6 +10,9 @@ export function BoardManager({ isAuthenticated, onBoardsLoaded, onSelectBoard, s
   const [error, setError] = useState('')
   const [form, setForm] = useState(emptyForm)
   const [isLoading, setIsLoading] = useState(false)
+  const [inviteIdentifier, setInviteIdentifier] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
+  const selectedBoard = boards.find((board) => board.id === selectedBoardId) || null
 
   const loadBoards = async () => {
     if (!isAuthenticated) {
@@ -71,6 +74,18 @@ export function BoardManager({ isAuthenticated, onBoardsLoaded, onSelectBoard, s
     }
   }, [isAuthenticated, onBoardsLoaded])
 
+  useEffect(() => {
+    const handleBoardsRefresh = () => {
+      loadBoards()
+    }
+
+    window.addEventListener('boards:refresh', handleBoardsRefresh)
+
+    return () => {
+      window.removeEventListener('boards:refresh', handleBoardsRefresh)
+    }
+  })
+
   const handleChange = (event) => {
     setForm((current) => ({
       ...current,
@@ -90,11 +105,32 @@ export function BoardManager({ isAuthenticated, onBoardsLoaded, onSelectBoard, s
     }
 
     try {
+      setSuccessMessage('')
       const board = await boardsApi.createBoard(form)
       onSelectBoard(board.id)
 
       resetForm()
       await loadBoards()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleInviteMember = async (event) => {
+    event.preventDefault()
+
+    if (!selectedBoardId || !inviteIdentifier.trim()) {
+      return
+    }
+
+    try {
+      setError('')
+      setSuccessMessage('')
+
+      const result = await boardsApi.inviteBoardMember(selectedBoardId, inviteIdentifier.trim())
+
+      setInviteIdentifier('')
+      setSuccessMessage(`Invitation sent to ${result.invitee.name}.`)
     } catch (err) {
       setError(err.message)
     }
@@ -128,6 +164,7 @@ export function BoardManager({ isAuthenticated, onBoardsLoaded, onSelectBoard, s
           </select>
           <form className="board-form" onSubmit={handleSubmit}>
             {error ? <p className="inline-error">{error}</p> : null}
+            {successMessage ? <p className="inline-success">{successMessage}</p> : null}
             <input
               aria-label="Board name"
               name="name"
@@ -139,6 +176,19 @@ export function BoardManager({ isAuthenticated, onBoardsLoaded, onSelectBoard, s
               <button type="submit">Create board</button>
             </div>
           </form>
+          {selectedBoard ? (
+            <form className="board-form board-member-form" onSubmit={handleInviteMember}>
+              <input
+                aria-label="User ID, username, or email"
+                placeholder="Invite by user ID, username, or email"
+                value={inviteIdentifier}
+                onChange={(event) => setInviteIdentifier(event.target.value)}
+              />
+              <div className="form-actions">
+                <button type="submit">Send invite</button>
+              </div>
+            </form>
+          ) : null}
         </div>
       )}
     </section>

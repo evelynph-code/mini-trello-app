@@ -1,5 +1,6 @@
 const cardRepository = require('../repositories/cardRepository')
 const taskRepository = require('../repositories/taskRepository')
+const userRepository = require('../repositories/userRepository')
 const boardsService = require('./boardsService')
 
 const ensureCardAccess = async (boardId, cardId, userId) => {
@@ -34,6 +35,41 @@ const getTask = async (boardId, cardId, taskId, userId) => {
   return taskRepository.findTaskById(boardId, cardId, taskId)
 }
 
+const canEditTask = (task, board, userId) =>
+  task.ownerId === userId ||
+  task.assigneeId === userId ||
+  (!task.ownerId && board.ownerId === userId)
+
+const enrichTaskInput = async (board, userId, taskInput) => {
+  const assigneeId = taskInput.assigneeId || null
+  let assigneeName = ''
+
+  if (assigneeId) {
+    if (!board.memberIds?.includes(assigneeId)) {
+      const error = new Error('Assignee must be a member of this board.')
+      error.status = 400
+      throw error
+    }
+
+    const assignee = await userRepository.findUserById(assigneeId)
+
+    if (!assignee) {
+      const error = new Error('Assignee not found.')
+      error.status = 404
+      throw error
+    }
+
+    assigneeName = assignee.name
+  }
+
+  return {
+    ...taskInput,
+    assigneeId,
+    assigneeName,
+    ownerId: taskInput.ownerId || userId,
+  }
+}
+
 const createTask = async (boardId, cardId, userId, taskInput) => {
   const access = await ensureCardAccess(boardId, cardId, userId)
 
@@ -41,7 +77,16 @@ const createTask = async (boardId, cardId, userId, taskInput) => {
     return null
   }
 
-  return taskRepository.createTask(boardId, cardId, taskInput)
+  const owner = await userRepository.findUserById(userId)
+
+  return taskRepository.createTask(
+    boardId,
+    cardId,
+    await enrichTaskInput(access.board, userId, {
+      ...taskInput,
+      ownerName: owner?.name || '',
+    }),
+  )
 }
 
 const updateTask = async (boardId, cardId, taskId, userId, taskInput) => {
@@ -57,7 +102,22 @@ const updateTask = async (boardId, cardId, taskId, userId, taskInput) => {
     return null
   }
 
-  return taskRepository.updateTask(boardId, cardId, taskId, taskInput)
+  if (!canEditTask(task, access.board, userId)) {
+    const error = new Error('Only the task owner or assignee can edit this task.')
+    error.status = 403
+    throw error
+  }
+
+  return taskRepository.updateTask(
+    boardId,
+    cardId,
+    taskId,
+    await enrichTaskInput(access.board, userId, {
+      ...taskInput,
+      ownerId: task.ownerId || userId,
+      ownerName: task.ownerName || '',
+    }),
+  )
 }
 
 const deleteTask = async (boardId, cardId, taskId, userId) => {
@@ -71,6 +131,12 @@ const deleteTask = async (boardId, cardId, taskId, userId) => {
 
   if (!task) {
     return null
+  }
+
+  if (!canEditTask(task, access.board, userId)) {
+    const error = new Error('Only the task owner or assignee can delete this task.')
+    error.status = 403
+    throw error
   }
 
   await taskRepository.deleteTask(boardId, cardId, taskId)

@@ -1,9 +1,17 @@
 const crypto = require('crypto')
+const { promisify } = require('util')
 const { env } = require('../config/env')
+const boardRepository = require('../repositories/boardRepository')
+const oauthStateRepository = require('../repositories/oauthStateRepository')
+const sessionRepository = require('../repositories/sessionRepository')
+const taskRepository = require('../repositories/taskRepository')
 const userRepository = require('../repositories/userRepository')
+const emailService = require('./emailService')
 
-const sessions = new Map()
-const oauthStates = new Map()
+const scryptAsync = promisify(crypto.scrypt)
+const oauthStateMaxAgeSeconds = 60 * 10
+const sessionMaxAgeSeconds = 60 * 60 * 24
+const emailVerificationMaxAgeMs = 1000 * 60 * 15
 
 const cookieNames = {
   session: 'mini_trello_session',
@@ -12,13 +20,46 @@ const cookieNames = {
 
 const createRandomToken = () => crypto.randomBytes(24).toString('hex')
 
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex')
+
+const createVerificationCode = () => String(crypto.randomInt(100000, 1000000))
+
+const hashVerificationCode = (userId, code) => hashToken(`${userId}:${code}`)
+
+const normalizeEmail = (email) => String(email || '').trim().toLowerCase()
+
+const normalizeUsername = (username) =>
+  String(username || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '')
+
+const hashPassword = async (password, salt = createRandomToken()) => {
+  const derivedKey = await scryptAsync(password, salt, 64)
+
+  return {
+    hash: derivedKey.toString('hex'),
+    salt,
+  }
+}
+
+const verifyPassword = async (password, salt, expectedHash) => {
+  if (!salt || !expectedHash) {
+    return false
+  }
+
+  const { hash } = await hashPassword(password, salt)
+
+  return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(expectedHash, 'hex'))
+}
+
 const createCookie = (name, value, options = {}) => {
   const parts = [
     `${name}=${value}`,
     'HttpOnly',
     'Path=/',
     'SameSite=Lax',
-    `Max-Age=${options.maxAge || 60 * 60 * 24}`,
+    `Max-Age=${options.maxAge || sessionMaxAgeSeconds}`,
   ]
 
   if (env.nodeEnv === 'production') {
@@ -38,7 +79,7 @@ const getCookie = (req, name) => {
   return cookie ? decodeURIComponent(cookie.split('=').slice(1).join('=')) : null
 }
 
-const buildGitHubAuthorizeUrl = () => {
+const buildGitHubAuthorizeUrl = async () => {
   const state = createRandomToken()
   const url = new URL('https://github.com/login/oauth/authorize')
 
@@ -47,10 +88,10 @@ const buildGitHubAuthorizeUrl = () => {
   url.searchParams.set('scope', 'read:user user:email')
   url.searchParams.set('state', state)
 
-  oauthStates.set(state, Date.now())
+  await oauthStateRepository.createState(state, oauthStateMaxAgeSeconds)
 
   return {
-    stateCookie: createCookie(cookieNames.state, state, { maxAge: 60 * 10 }),
+    stateCookie: createCookie(cookieNames.state, state, { maxAge: oauthStateMaxAgeSeconds }),
     url: url.toString(),
   }
 }
@@ -63,19 +104,15 @@ const assertGitHubOAuthConfigured = () => {
   }
 }
 
-const validateState = (req, receivedState) => {
+const validateState = async (req, receivedState) => {
   const storedState = getCookie(req, cookieNames.state)
-  const stateCreatedAt = oauthStates.get(receivedState)
-  const isExpired = stateCreatedAt && Date.now() - stateCreatedAt > 10 * 60 * 1000
-
-  oauthStates.delete(receivedState)
+  const consumedState = await oauthStateRepository.consumeState(receivedState)
 
   return Boolean(
     receivedState &&
       storedState &&
       storedState === receivedState &&
-      stateCreatedAt &&
-      !isExpired,
+      consumedState,
   )
 }
 
@@ -130,13 +167,10 @@ const fetchGitHubUser = async (accessToken) => {
   }
 }
 
-const createSession = (user) => {
+const createSession = async (user) => {
   const sessionId = createRandomToken()
 
-  sessions.set(sessionId, {
-    createdAt: Date.now(),
-    userId: user.id,
-  })
+  await sessionRepository.createSession(sessionId, user.id, sessionMaxAgeSeconds)
 
   return {
     sessionCookie: createCookie(cookieNames.session, sessionId),
@@ -146,9 +180,176 @@ const createSession = (user) => {
 
 const persistUser = (user) => userRepository.upsertUser(user)
 
+const sendEmailVerification = async (user) => {
+  if (!user || user.provider !== 'local' || user.emailVerified) {
+    return { status: user?.emailVerificationStatus || 'verified' }
+  }
+
+  const code = createVerificationCode()
+  const codeHash = hashVerificationCode(user.id, code)
+  const expiresAt = new Date(Date.now() + emailVerificationMaxAgeMs)
+  const updatedUser = await userRepository.setEmailVerificationCode(user.id, codeHash, expiresAt)
+
+  let delivery
+
+  try {
+    delivery = await emailService.sendVerificationEmail(updatedUser, code)
+  } catch (err) {
+    console.error('Unable to send verification email.', err)
+
+    return {
+      failed: true,
+      message: 'Account created, but the verification email could not be sent. Check SMTP settings and resend.',
+      status: updatedUser.emailVerificationStatus,
+    }
+  }
+
+  return {
+    ...delivery,
+    message: delivery.skipped
+      ? 'Email verification is pending. Configure SMTP to send verification emails.'
+      : 'Verification email sent. Check your inbox.',
+    status: updatedUser.emailVerificationStatus,
+  }
+}
+
+const registerLocalUser = async ({ email, name, password, username }) => {
+  const normalizedEmail = normalizeEmail(email)
+  const normalizedUsername = normalizeUsername(username)
+
+  if (await userRepository.findUserByEmail(normalizedEmail)) {
+    const error = new Error('Email is already registered.')
+    error.status = 409
+    throw error
+  }
+
+  if (await userRepository.findUserByUsername(normalizedUsername)) {
+    const error = new Error('Username is already taken.')
+    error.status = 409
+    throw error
+  }
+
+  const { hash, salt } = await hashPassword(password)
+
+  const user = await userRepository.createLocalUser({
+    email: normalizedEmail,
+    id: `local-${normalizedUsername}`,
+    name,
+    passwordHash: hash,
+    passwordSalt: salt,
+    role: 'Team member',
+    username: normalizedUsername,
+  })
+
+  const verification = await sendEmailVerification(user)
+
+  return {
+    user,
+    verification,
+  }
+}
+
+const loginLocalUser = async ({ identifier, password }) => {
+  const credentials = await userRepository.findLocalUserCredentials(
+    String(identifier || '').trim().toLowerCase(),
+  )
+
+  if (!credentials) {
+    return null
+  }
+
+  const isValidPassword = await verifyPassword(
+    password,
+    credentials.passwordSalt,
+    credentials.passwordHash,
+  )
+
+  return isValidPassword ? credentials.user : null
+}
+
+const resendEmailVerification = async (req) => {
+  const user = await getCurrentUser(req)
+
+  if (!user) {
+    const error = new Error('Not authenticated.')
+    error.status = 401
+    throw error
+  }
+
+  if (user.provider !== 'local') {
+    const error = new Error('Only local accounts use email verification.')
+    error.status = 400
+    throw error
+  }
+
+  if (user.emailVerified) {
+    return {
+      message: 'Email is already verified.',
+      status: user.emailVerificationStatus,
+    }
+  }
+
+  return sendEmailVerification(user)
+}
+
+const verifyEmail = async (req, code) => {
+  const user = await getCurrentUser(req)
+  const normalizedCode = String(code || '').trim()
+
+  if (!user) {
+    const error = new Error('Not authenticated.')
+    error.status = 401
+    throw error
+  }
+
+  if (user.provider !== 'local') {
+    const error = new Error('Only local accounts use email verification.')
+    error.status = 400
+    throw error
+  }
+
+  if (user.emailVerified) {
+    return user
+  }
+
+  if (!/^\d{6}$/.test(normalizedCode)) {
+    const error = new Error('A valid 6-digit verification code is required.')
+    error.status = 400
+    throw error
+  }
+
+  const match = await userRepository.findEmailVerificationByUserId(user.id)
+
+  if (!match?.user || !match.emailVerificationCodeHash) {
+    const error = new Error('Verification code is invalid or has already been used.')
+    error.status = 400
+    throw error
+  }
+
+  if (!match.emailVerificationExpiresAt || match.emailVerificationExpiresAt.getTime() < Date.now()) {
+    const error = new Error('Verification code has expired.')
+    error.status = 400
+    throw error
+  }
+
+  const expectedHash = Buffer.from(match.emailVerificationCodeHash, 'hex')
+  const codeHash = Buffer.from(hashVerificationCode(user.id, normalizedCode), 'hex')
+
+  if (
+    expectedHash.length !== codeHash.length ||
+    !crypto.timingSafeEqual(expectedHash, codeHash)
+  ) {
+    const error = new Error('Verification code is invalid or has already been used.')
+    error.status = 400
+    throw error
+  }
+
+  return userRepository.markEmailVerified(match.user.id)
+}
+
 const getCurrentUser = async (req) => {
   const sessionId = getCookie(req, cookieNames.session)
-  const session = sessionId ? sessions.get(sessionId) : null
+  const session = sessionId ? await sessionRepository.findSessionById(sessionId) : null
 
   if (!session?.userId) {
     return null
@@ -157,14 +358,28 @@ const getCurrentUser = async (req) => {
   return userRepository.findUserById(session.userId)
 }
 
-const clearSession = (req) => {
+const clearSession = async (req) => {
   const sessionId = getCookie(req, cookieNames.session)
 
   if (sessionId) {
-    sessions.delete(sessionId)
+    await sessionRepository.deleteSession(sessionId)
   }
 
   return clearCookie(cookieNames.session)
+}
+
+const deleteCurrentUser = async (req) => {
+  const user = await getCurrentUser(req)
+
+  if (!user) {
+    return null
+  }
+
+  await taskRepository.deleteTasksByOwnerId(user.id)
+  await boardRepository.deleteBoardsOwnedByUserId(user.id)
+  await userRepository.deleteUser(user.id)
+
+  return user
 }
 
 module.exports = {
@@ -174,9 +389,14 @@ module.exports = {
   clearSession,
   cookieNames,
   createSession,
+  deleteCurrentUser,
   exchangeCodeForToken,
   fetchGitHubUser,
   getCurrentUser,
+  loginLocalUser,
   persistUser,
+  registerLocalUser,
+  resendEmailVerification,
   validateState,
+  verifyEmail,
 }

@@ -94,10 +94,37 @@ const deleteBoard = async (req, res, next) => {
   }
 }
 
+const inviteBoardMember = async (req, res, next) => {
+  const identifier = String(req.body.identifier || '').trim()
+
+  if (!identifier) {
+    return res.status(400).json({ error: 'User ID, username, or email is required.' })
+  }
+
+  try {
+    const result = await boardsService.inviteBoardMember(req.params.id, req.user, identifier)
+
+    if (!result) {
+      return res.status(404).json({ error: 'Board not found.' })
+    }
+
+    emitBoardChanged(req.params.id, {
+      boardId: req.params.id,
+      invitation: result.invitation,
+      resource: 'invitations',
+    })
+
+    return res.status(201).json({ data: result })
+  } catch (err) {
+    return next(err)
+  }
+}
+
 module.exports = {
   createBoard,
   deleteBoard,
   getBoard,
   getBoards,
+  inviteBoardMember,
   updateBoard,
 }
