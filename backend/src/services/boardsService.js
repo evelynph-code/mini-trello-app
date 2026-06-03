@@ -28,9 +28,38 @@ const ensureBoardOwner = async (boardId, userId) => {
 const createBoard = (userId, boardInput) =>
   boardRepository.createBoard(userId, boardInput)
 
-const getBoards = (userId) => boardRepository.findBoardsByUserId(userId)
+const publicMemberProfile = (user) => ({
+  avatarUrl: user.avatarUrl,
+  email: user.email,
+  id: user.id,
+  initials: user.initials,
+  name: user.name,
+  role: user.role,
+  username: user.username,
+})
 
-const getBoard = (boardId, userId) => ensureBoardAccess(boardId, userId)
+const withOwnerMembers = async (board, userId) => {
+  if (!board || board.ownerId !== userId) {
+    return board
+  }
+
+  const memberIds = (board.memberIds || []).filter((memberId) => memberId !== board.ownerId)
+  const members = await userRepository.findUsersByIds(memberIds)
+
+  return {
+    ...board,
+    members: members.map(publicMemberProfile),
+  }
+}
+
+const getBoards = async (userId) => {
+  const boards = await boardRepository.findBoardsByUserId(userId)
+
+  return Promise.all(boards.map((board) => withOwnerMembers(board, userId)))
+}
+
+const getBoard = async (boardId, userId) =>
+  withOwnerMembers(await ensureBoardAccess(boardId, userId), userId)
 
 const updateBoard = async (boardId, userId, boardInput) => {
   const board = await ensureBoardAccess(boardId, userId)
@@ -87,6 +116,28 @@ const inviteBoardMember = async (boardId, inviter, identifier) => {
   }
 }
 
+const removeBoardMember = async (boardId, ownerId, memberId) => {
+  const board = await ensureBoardOwner(boardId, ownerId)
+
+  if (!board) {
+    return null
+  }
+
+  if (memberId === board.ownerId) {
+    const error = new Error('Board owner cannot be removed.')
+    error.status = 400
+    throw error
+  }
+
+  if (!board.memberIds?.includes(memberId)) {
+    const error = new Error('User does not have access to this board.')
+    error.status = 404
+    throw error
+  }
+
+  return withOwnerMembers(await boardRepository.removeBoardMember(boardId, memberId), ownerId)
+}
+
 const deleteBoard = async (boardId, userId) => {
   const board = await ensureBoardOwner(boardId, userId)
 
@@ -104,5 +155,6 @@ module.exports = {
   getBoard,
   getBoards,
   inviteBoardMember,
+  removeBoardMember,
   updateBoard,
 }

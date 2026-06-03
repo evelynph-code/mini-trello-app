@@ -30,6 +30,13 @@ const findUserById = async (userId) => {
   return serializeUser(snapshot)
 }
 
+const findUsersByIds = async (userIds) => {
+  const uniqueUserIds = [...new Set(userIds.filter(Boolean))]
+  const users = await Promise.all(uniqueUserIds.map(findUserById))
+
+  return users.filter(Boolean)
+}
+
 const findUserByEmail = async (email) => {
   const snapshot = await usersCollection().where('email', '==', email).limit(1).get()
 
@@ -241,6 +248,7 @@ module.exports = {
   findUserById,
   findUserByIdentifier,
   findUserByUsername,
+  findUsersByIds,
   findUsers,
   markEmailVerified,
   setEmailVerificationCode,

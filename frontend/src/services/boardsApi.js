@@ -40,6 +40,10 @@ export const boardsApi = {
     }),
   getBoard: (boardId) => request(`/boards/${boardId}`),
   getBoards: () => request('/boards'),
+  removeBoardMember: (boardId, memberId) =>
+    request(`/boards/${boardId}/members/${memberId}`, {
+      method: 'DELETE',
+    }),
   updateBoard: (boardId, board) =>
     request(`/boards/${boardId}`, {
       method: 'PUT',

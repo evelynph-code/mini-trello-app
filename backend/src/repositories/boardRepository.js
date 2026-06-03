@@ -148,6 +148,17 @@ const addBoardMember = async (boardId, userId) => {
   return findBoardById(boardId)
 }
 
+const removeBoardMember = async (boardId, userId) => {
+  const boardRef = boardsCollection().doc(boardId)
+
+  await boardRef.update({
+    memberIds: admin.firestore.FieldValue.arrayRemove(userId),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  })
+
+  return findBoardById(boardId)
+}
+
 const deleteBoard = async (boardId) => {
   await boardsCollection().doc(boardId).delete()
 }
@@ -210,5 +221,6 @@ module.exports = {
   findBoardById,
   findBoardsOwnedByUserId,
   findBoardsByUserId,
+  removeBoardMember,
   updateBoard,
 }

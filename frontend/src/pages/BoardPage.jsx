@@ -19,6 +19,7 @@ export function BoardPage({ currentUser, isAuthenticated }) {
   return (
     <main className="board-app">
       <BoardManager
+        currentUser={currentUser}
         isAuthenticated={isAuthenticated}
         onBoardsLoaded={handleBoardsLoaded}
         onSelectBoard={setSelectedBoardId}
