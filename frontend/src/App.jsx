@@ -7,13 +7,14 @@ import { LandingPage } from './pages/LandingPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { authApi } from './services/authApi'
 import { invitationsApi } from './services/invitationsApi'
+import { notificationsApi } from './services/notificationsApi'
 import './App.css'
 
 function App() {
   const [activePage, setActivePage] = useState('dashboard')
   const [currentUser, setCurrentUser] = useState(null)
   const [authError, setAuthError] = useState('')
-  const [invitations, setInvitations] = useState([])
+  const [notifications, setNotifications] = useState([])
   const [isAuthReady, setIsAuthReady] = useState(false)
   const isAuthenticated = Boolean(currentUser)
 
@@ -54,13 +55,13 @@ function App() {
     }
   }, [])
 
-  const loadInvitations = useCallback(async () => {
+  const loadNotifications = useCallback(async () => {
     if (!currentUser) {
       return
     }
 
     try {
-      setInvitations(await invitationsApi.getPendingInvitations())
+      setNotifications(await notificationsApi.getNotifications())
     } catch (err) {
       setAuthError(err.message)
     }
@@ -75,23 +76,32 @@ function App() {
 
     Promise.resolve().then(async () => {
       if (isMounted) {
-        await loadInvitations()
+        await loadNotifications()
       }
     })
 
     return () => {
       isMounted = false
     }
-  }, [currentUser, loadInvitations])
+  }, [currentUser, loadNotifications])
 
   const handleInvitationResponse = async (invitationId, status) => {
     try {
       await invitationsApi.respondToInvitation(invitationId, status)
-      await loadInvitations()
+      await loadNotifications()
 
       if (status === 'accepted') {
         window.dispatchEvent(new Event('boards:refresh'))
       }
+    } catch (err) {
+      setAuthError(err.message)
+    }
+  }
+
+  const handleNotificationRead = async (notificationId) => {
+    try {
+      await notificationsApi.markRead(notificationId)
+      await loadNotifications()
     } catch (err) {
       setAuthError(err.message)
     }
@@ -105,7 +115,7 @@ function App() {
 
     try {
       await authApi.logout()
-      setInvitations([])
+      setNotifications([])
       await loadCurrentUser()
     } catch (err) {
       setAuthError(err.message)
@@ -137,8 +147,9 @@ function App() {
         isAuthenticated={isAuthenticated}
         isSignInDisabled={false}
         activePage={activePage}
-        invitations={invitations}
+        notifications={notifications}
         onNavigate={setActivePage}
+        onNotificationRead={handleNotificationRead}
         onRespondToInvitation={handleInvitationResponse}
         onToggleAuth={handleToggleAuth}
       >

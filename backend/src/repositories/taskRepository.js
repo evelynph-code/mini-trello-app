@@ -54,6 +54,24 @@ const countRemainingTasksByCardId = async (boardId, cardIds) => {
   return Object.fromEntries(countEntries)
 }
 
+const findTasksByAssigneeAcrossCards = async (boardId, cardIds, assigneeId) => {
+  const taskGroups = await Promise.all(
+    cardIds.map(async (cardId) => {
+      const snapshot = await tasksCollection(boardId, cardId)
+        .where('assigneeId', '==', assigneeId)
+        .get()
+
+      return snapshot.docs.map((doc) => ({
+        ...serializeTask(doc),
+        boardId,
+        cardId,
+      }))
+    }),
+  )
+
+  return taskGroups.flat()
+}
+
 const createTask = async (boardId, cardId, taskInput) => {
   const now = admin.firestore.FieldValue.serverTimestamp()
   const taskRef = tasksCollection(boardId, cardId).doc()
@@ -116,6 +134,7 @@ module.exports = {
   createTask,
   deleteTask,
   findTaskById,
+  findTasksByAssigneeAcrossCards,
   findTasksByCardId,
   updateTask,
 }

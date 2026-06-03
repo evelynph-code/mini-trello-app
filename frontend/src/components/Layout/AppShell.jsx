@@ -8,8 +8,9 @@ export function AppShell({
   isAuthenticated,
   isSignInDisabled,
   activePage,
-  invitations = [],
+  notifications = [],
   onNavigate,
+  onNotificationRead,
   onRespondToInvitation,
   onToggleAuth,
 }) {
@@ -47,35 +48,42 @@ export function AppShell({
                 onClick={() => setIsNotificationsOpen((isOpen) => !isOpen)}
               >
                 <Bell size={16} />
-                Invitations
-                {invitations.length > 0 ? <span>{invitations.length}</span> : null}
+                Notifications
+                {notifications.length > 0 ? <span>{notifications.length}</span> : null}
               </button>
               {isNotificationsOpen ? (
                 <div className="notification-popover">
-                  <h3>Pending invitations</h3>
-                  {invitations.length === 0 ? (
-                    <p>No pending invitations.</p>
+                  <h3>Notifications</h3>
+                  {notifications.length === 0 ? (
+                    <p>No notifications.</p>
                   ) : (
-                    invitations.map((invitation) => (
-                      <article key={invitation.id}>
+                    notifications.map((notification) => (
+                      <article key={notification.id}>
                         <p>
-                          <strong>{invitation.inviterName}</strong> invited you to{' '}
-                          <strong>{invitation.boardName}</strong>
+                          <strong>{notification.title}</strong>
+                          <br />
+                          {notification.message}
                         </p>
-                        <div className="form-actions">
-                          <button
-                            type="button"
-                            onClick={() => onRespondToInvitation(invitation.id, 'accepted')}
-                          >
-                            Accept
+                        {notification.type === 'board-invitation' ? (
+                          <div className="form-actions">
+                            <button
+                              type="button"
+                              onClick={() => onRespondToInvitation(notification.id, 'accepted')}
+                            >
+                              Accept
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onRespondToInvitation(notification.id, 'declined')}
+                            >
+                              Decline
+                            </button>
+                          </div>
+                        ) : notification.type !== 'task-due-soon' ? (
+                          <button type="button" onClick={() => onNotificationRead(notification.id)}>
+                            Mark read
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => onRespondToInvitation(invitation.id, 'declined')}
-                          >
-                            Decline
-                          </button>
-                        </div>
+                        ) : null}
                       </article>
                     ))
                   )}

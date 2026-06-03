@@ -1,5 +1,6 @@
 const cardActivityController = require('./cardActivityController')
 const cardActivityService = require('../services/cardActivityService')
+const notificationService = require('../services/notificationService')
 const { emitBoardChanged, emitTasksChanged } = require('../realtime/socket')
 const taskService = require('../services/taskService')
 
@@ -110,6 +111,12 @@ const createTask = async (req, res, next) => {
       taskTitle: task.title,
       type: 'task-created',
     })
+    await notificationService.notifyTaskAssignedByIds({
+      actor: req.user,
+      boardId: req.params.boardId,
+      cardId: req.params.cardId,
+      task,
+    })
     await emitTaskEvents(req.params.boardId, req.params.cardId, req.user.id)
 
     return res.status(201).json({ data: task })
@@ -154,6 +161,14 @@ const updateTask = async (req, res, next) => {
       taskTitle: task.title,
       type: didCompleteTask ? 'task-completed' : 'task-updated',
     })
+    if (previousTask?.assigneeId !== task.assigneeId) {
+      await notificationService.notifyTaskAssignedByIds({
+        actor: req.user,
+        boardId: req.params.boardId,
+        cardId: req.params.cardId,
+        task,
+      })
+    }
     await emitTaskEvents(req.params.boardId, req.params.cardId, req.user.id)
 
     return res.json({ data: task })

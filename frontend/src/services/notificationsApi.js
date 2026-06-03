@@ -18,10 +18,10 @@ const request = async (path, options = {}) => {
   return payload.data
 }
 
-export const invitationsApi = {
-  respondToInvitation: (invitationId, status) =>
-    request(`/invitations/${invitationId}`, {
+export const notificationsApi = {
+  getNotifications: () => request('/notifications'),
+  markRead: (notificationId) =>
+    request(`/notifications/${notificationId}/read`, {
       method: 'PATCH',
-      body: JSON.stringify({ status }),
     }),
 }
