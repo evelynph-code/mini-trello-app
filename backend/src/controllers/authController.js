@@ -63,7 +63,7 @@ const register = async (req, res, next) => {
 
   try {
     const user = await authService.registerLocalUser(validation.input)
-    const { sessionCookie } = authService.createSession(user)
+    const { sessionCookie } = await authService.createSession(user)
 
     res.setHeader('Set-Cookie', sessionCookie)
 
@@ -95,7 +95,7 @@ const login = async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid username/email or password.' })
     }
 
-    const { sessionCookie } = authService.createSession(user)
+    const { sessionCookie } = await authService.createSession(user)
 
     res.setHeader('Set-Cookie', sessionCookie)
 
@@ -135,11 +135,11 @@ const updateCurrentUser = async (req, res, next) => {
   }
 }
 
-const redirectToGitHub = (_req, res, next) => {
+const redirectToGitHub = async (_req, res, next) => {
   try {
     authService.assertGitHubOAuthConfigured()
 
-    const { stateCookie, url } = authService.buildGitHubAuthorizeUrl()
+    const { stateCookie, url } = await authService.buildGitHubAuthorizeUrl()
 
     res.setHeader('Set-Cookie', stateCookie)
     return res.redirect(url)
@@ -152,7 +152,7 @@ const handleGitHubCallback = async (req, res, next) => {
   const { code, state } = req.query
 
   try {
-    if (!code || !authService.validateState(req, state)) {
+    if (!code || !(await authService.validateState(req, state))) {
       return res.redirect(`${env.clientOrigin}/?auth=github_failed`)
     }
 
@@ -160,7 +160,7 @@ const handleGitHubCallback = async (req, res, next) => {
     const user = await authService.fetchGitHubUser(accessToken)
     await authService.persistUser(user)
 
-    const { sessionCookie } = authService.createSession(user)
+    const { sessionCookie } = await authService.createSession(user)
 
     res.setHeader('Set-Cookie', [
       sessionCookie,
@@ -173,9 +173,13 @@ const handleGitHubCallback = async (req, res, next) => {
   }
 }
 
-const logout = (req, res) => {
-  res.setHeader('Set-Cookie', authService.clearSession(req))
-  res.json({ data: { success: true } })
+const logout = async (req, res, next) => {
+  try {
+    res.setHeader('Set-Cookie', await authService.clearSession(req))
+    return res.json({ data: { success: true } })
+  } catch (err) {
+    return next(err)
+  }
 }
 
 module.exports = {

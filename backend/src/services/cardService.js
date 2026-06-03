@@ -1,4 +1,5 @@
 const cardRepository = require('../repositories/cardRepository')
+const taskRepository = require('../repositories/taskRepository')
 const boardsService = require('./boardsService')
 
 const defaultListId = 'today'
@@ -28,6 +29,21 @@ const getCardForBoard = async (boardId, cardId, userId) => {
   }
 
   return cardRepository.findCardById(boardId, cardId)
+}
+
+const getTaskCountsForBoard = async (boardId, userId) => {
+  const board = await ensureBoardAccess(boardId, userId)
+
+  if (!board) {
+    return null
+  }
+
+  const cards = await cardRepository.findCardsByBoardId(boardId)
+
+  return taskRepository.countRemainingTasksByCardId(
+    boardId,
+    cards.map((card) => card.id),
+  )
 }
 
 const createCardForBoard = async (boardId, userId, cardInput) => {
@@ -125,6 +141,7 @@ module.exports = {
   getCardForBoard,
   getCardsForBoard,
   getCardsForUser,
+  getTaskCountsForBoard,
   updateCardOrderForBoard,
   updateCardForBoard,
 }

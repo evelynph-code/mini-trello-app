@@ -1,0 +1,73 @@
+.settings-page {
+  padding: 28px clamp(16px, 4vw, 40px) 36px;
+}
+
+.settings-panel {
+  display: grid;
+  gap: 16px;
+  max-width: 760px;
+  padding: 22px;
+}
+
+.settings-panel h2 {
+  margin: 4px 0 0;
+}
+
+.settings-placeholder {
+  display: grid;
+  gap: 16px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.user-settings-list {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.user-setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid #dfe6ef;
+  border-radius: 8px;
+  background: #fbfdff;
+  padding: 12px;
+}
+
+.user-setting-row h3 {
+  font-size: 15px;
+  margin: 4px 0 0;
+}
+
+.user-setting-value {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 180px;
+}
+
+.user-setting-value code {
+  border: 1px solid #dfe6ef;
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--text-strong);
+  font-size: 12px;
+  padding: 5px 7px;
+}
+
+.user-setting-form {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  min-width: min(420px, 100%);
+}
+
+.user-setting-form input {
+  min-height: 38px;
+}

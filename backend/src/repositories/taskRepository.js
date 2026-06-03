@@ -41,6 +41,19 @@ const findTaskById = async (boardId, cardId, taskId) => {
   return serializeTask(snapshot)
 }
 
+const countRemainingTasksByCardId = async (boardId, cardIds) => {
+  const countEntries = await Promise.all(
+    cardIds.map(async (cardId) => {
+      const snapshot = await tasksCollection(boardId, cardId).get()
+      const remainingCount = snapshot.docs.filter((doc) => doc.data().status !== 'done').length
+
+      return [cardId, remainingCount]
+    }),
+  )
+
+  return Object.fromEntries(countEntries)
+}
+
 const createTask = async (boardId, cardId, taskInput) => {
   const now = admin.firestore.FieldValue.serverTimestamp()
   const taskRef = tasksCollection(boardId, cardId).doc()
@@ -99,6 +112,7 @@ const deleteTask = async (boardId, cardId, taskId) => {
 }
 
 module.exports = {
+  countRemainingTasksByCardId,
   createTask,
   deleteTask,
   findTaskById,

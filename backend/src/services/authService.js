@@ -1,11 +1,13 @@
 const crypto = require('crypto')
 const { promisify } = require('util')
 const { env } = require('../config/env')
+const oauthStateRepository = require('../repositories/oauthStateRepository')
+const sessionRepository = require('../repositories/sessionRepository')
 const userRepository = require('../repositories/userRepository')
 
-const sessions = new Map()
-const oauthStates = new Map()
 const scryptAsync = promisify(crypto.scrypt)
+const oauthStateMaxAgeSeconds = 60 * 10
+const sessionMaxAgeSeconds = 60 * 60 * 24
 
 const cookieNames = {
   session: 'mini_trello_session',
@@ -47,7 +49,7 @@ const createCookie = (name, value, options = {}) => {
     'HttpOnly',
     'Path=/',
     'SameSite=Lax',
-    `Max-Age=${options.maxAge || 60 * 60 * 24}`,
+    `Max-Age=${options.maxAge || sessionMaxAgeSeconds}`,
   ]
 
   if (env.nodeEnv === 'production') {
@@ -67,7 +69,7 @@ const getCookie = (req, name) => {
   return cookie ? decodeURIComponent(cookie.split('=').slice(1).join('=')) : null
 }
 
-const buildGitHubAuthorizeUrl = () => {
+const buildGitHubAuthorizeUrl = async () => {
   const state = createRandomToken()
   const url = new URL('https://github.com/login/oauth/authorize')
 
@@ -76,10 +78,10 @@ const buildGitHubAuthorizeUrl = () => {
   url.searchParams.set('scope', 'read:user user:email')
   url.searchParams.set('state', state)
 
-  oauthStates.set(state, Date.now())
+  await oauthStateRepository.createState(state, oauthStateMaxAgeSeconds)
 
   return {
-    stateCookie: createCookie(cookieNames.state, state, { maxAge: 60 * 10 }),
+    stateCookie: createCookie(cookieNames.state, state, { maxAge: oauthStateMaxAgeSeconds }),
     url: url.toString(),
   }
 }
@@ -92,19 +94,15 @@ const assertGitHubOAuthConfigured = () => {
   }
 }
 
-const validateState = (req, receivedState) => {
+const validateState = async (req, receivedState) => {
   const storedState = getCookie(req, cookieNames.state)
-  const stateCreatedAt = oauthStates.get(receivedState)
-  const isExpired = stateCreatedAt && Date.now() - stateCreatedAt > 10 * 60 * 1000
-
-  oauthStates.delete(receivedState)
+  const consumedState = await oauthStateRepository.consumeState(receivedState)
 
   return Boolean(
     receivedState &&
       storedState &&
       storedState === receivedState &&
-      stateCreatedAt &&
-      !isExpired,
+      consumedState,
   )
 }
 
@@ -159,13 +157,10 @@ const fetchGitHubUser = async (accessToken) => {
   }
 }
 
-const createSession = (user) => {
+const createSession = async (user) => {
   const sessionId = createRandomToken()
 
-  sessions.set(sessionId, {
-    createdAt: Date.now(),
-    userId: user.id,
-  })
+  await sessionRepository.createSession(sessionId, user.id, sessionMaxAgeSeconds)
 
   return {
     sessionCookie: createCookie(cookieNames.session, sessionId),
@@ -224,7 +219,7 @@ const loginLocalUser = async ({ identifier, password }) => {
 
 const getCurrentUser = async (req) => {
   const sessionId = getCookie(req, cookieNames.session)
-  const session = sessionId ? sessions.get(sessionId) : null
+  const session = sessionId ? await sessionRepository.findSessionById(sessionId) : null
 
   if (!session?.userId) {
     return null
@@ -233,11 +228,11 @@ const getCurrentUser = async (req) => {
   return userRepository.findUserById(session.userId)
 }
 
-const clearSession = (req) => {
+const clearSession = async (req) => {
   const sessionId = getCookie(req, cookieNames.session)
 
   if (sessionId) {
-    sessions.delete(sessionId)
+    await sessionRepository.deleteSession(sessionId)
   }
 
   return clearCookie(cookieNames.session)
