@@ -1,3 +1,6 @@
+import { Bell } from 'lucide-react'
+import { useState } from 'react'
+
 export function AppShell({
   authError,
   children,
@@ -5,9 +8,13 @@ export function AppShell({
   isAuthenticated,
   isSignInDisabled,
   activePage,
+  invitations = [],
   onNavigate,
+  onRespondToInvitation,
   onToggleAuth,
 }) {
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+
   return (
     <div className="app-shell">
       <header className="topbar" aria-label="Application navigation">
@@ -32,6 +39,50 @@ export function AppShell({
           </button>
         </nav>
         <div className="auth-panel">
+          {isAuthenticated ? (
+            <div className="notification-menu">
+              <button
+                type="button"
+                className="notification-button"
+                onClick={() => setIsNotificationsOpen((isOpen) => !isOpen)}
+              >
+                <Bell size={16} />
+                Invitations
+                {invitations.length > 0 ? <span>{invitations.length}</span> : null}
+              </button>
+              {isNotificationsOpen ? (
+                <div className="notification-popover">
+                  <h3>Pending invitations</h3>
+                  {invitations.length === 0 ? (
+                    <p>No pending invitations.</p>
+                  ) : (
+                    invitations.map((invitation) => (
+                      <article key={invitation.id}>
+                        <p>
+                          <strong>{invitation.inviterName}</strong> invited you to{' '}
+                          <strong>{invitation.boardName}</strong>
+                        </p>
+                        <div className="form-actions">
+                          <button
+                            type="button"
+                            onClick={() => onRespondToInvitation(invitation.id, 'accepted')}
+                          >
+                            Accept
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onRespondToInvitation(invitation.id, 'declined')}
+                          >
+                            Decline
+                          </button>
+                        </div>
+                      </article>
+                    ))
+                  )}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           {isAuthenticated ? (
             <div className="signed-in-user">
               {currentUser.avatarUrl ? (

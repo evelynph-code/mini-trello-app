@@ -94,7 +94,7 @@ const deleteBoard = async (req, res, next) => {
   }
 }
 
-const addBoardMember = async (req, res, next) => {
+const inviteBoardMember = async (req, res, next) => {
   const identifier = String(req.body.identifier || '').trim()
 
   if (!identifier) {
@@ -102,30 +102,29 @@ const addBoardMember = async (req, res, next) => {
   }
 
   try {
-    const result = await boardsService.addBoardMember(req.params.id, req.user.id, identifier)
+    const result = await boardsService.inviteBoardMember(req.params.id, req.user, identifier)
 
     if (!result) {
       return res.status(404).json({ error: 'Board not found.' })
     }
 
     emitBoardChanged(req.params.id, {
-      board: result.board,
       boardId: req.params.id,
-      member: result.member,
-      resource: 'members',
+      invitation: result.invitation,
+      resource: 'invitations',
     })
 
-    return res.json({ data: result })
+    return res.status(201).json({ data: result })
   } catch (err) {
     return next(err)
   }
 }
 
 module.exports = {
-  addBoardMember,
   createBoard,
   deleteBoard,
   getBoard,
   getBoards,
+  inviteBoardMember,
   updateBoard,
 }

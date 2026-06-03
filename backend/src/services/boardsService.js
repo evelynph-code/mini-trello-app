@@ -1,4 +1,5 @@
 const boardRepository = require('../repositories/boardRepository')
+const invitationRepository = require('../repositories/invitationRepository')
 const userRepository = require('../repositories/userRepository')
 
 const hasBoardAccess = (board, userId) =>
@@ -41,7 +42,8 @@ const updateBoard = async (boardId, userId, boardInput) => {
   return boardRepository.updateBoard(boardId, boardInput)
 }
 
-const addBoardMember = async (boardId, ownerId, identifier) => {
+const inviteBoardMember = async (boardId, inviter, identifier) => {
+  const ownerId = inviter.id
   const board = await ensureBoardOwner(boardId, ownerId)
 
   if (!board) {
@@ -56,11 +58,32 @@ const addBoardMember = async (boardId, ownerId, identifier) => {
     throw error
   }
 
-  const updatedBoard = await boardRepository.addBoardMember(boardId, user.id)
+  if (board.memberIds?.includes(user.id)) {
+    const error = new Error('User is already a member of this board.')
+    error.status = 409
+    throw error
+  }
+
+  const existingInvitation = await invitationRepository.findPendingInvitation(boardId, user.id)
+
+  if (existingInvitation) {
+    const error = new Error('This user already has a pending invitation.')
+    error.status = 409
+    throw error
+  }
+
+  const invitation = await invitationRepository.createInvitation({
+    boardId,
+    boardName: board.name,
+    inviteeId: user.id,
+    inviteeName: user.name,
+    inviterId: inviter.id,
+    inviterName: inviter.name,
+  })
 
   return {
-    board: updatedBoard,
-    member: user,
+    invitation,
+    invitee: user,
   }
 }
 
@@ -76,10 +99,10 @@ const deleteBoard = async (boardId, userId) => {
 }
 
 module.exports = {
-  addBoardMember,
   createBoard,
   deleteBoard,
   getBoard,
   getBoards,
+  inviteBoardMember,
   updateBoard,
 }

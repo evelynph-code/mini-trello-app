@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { AppShell } from './components/Layout/AppShell'
@@ -6,12 +6,14 @@ import { BoardPage } from './pages/BoardPage'
 import { LandingPage } from './pages/LandingPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { authApi } from './services/authApi'
+import { invitationsApi } from './services/invitationsApi'
 import './App.css'
 
 function App() {
   const [activePage, setActivePage] = useState('dashboard')
   const [currentUser, setCurrentUser] = useState(null)
   const [authError, setAuthError] = useState('')
+  const [invitations, setInvitations] = useState([])
   const [isAuthReady, setIsAuthReady] = useState(false)
   const isAuthenticated = Boolean(currentUser)
 
@@ -52,6 +54,49 @@ function App() {
     }
   }, [])
 
+  const loadInvitations = useCallback(async () => {
+    if (!currentUser) {
+      return
+    }
+
+    try {
+      setInvitations(await invitationsApi.getPendingInvitations())
+    } catch (err) {
+      setAuthError(err.message)
+    }
+  }, [currentUser])
+
+  useEffect(() => {
+    if (!currentUser) {
+      return undefined
+    }
+
+    let isMounted = true
+
+    Promise.resolve().then(async () => {
+      if (isMounted) {
+        await loadInvitations()
+      }
+    })
+
+    return () => {
+      isMounted = false
+    }
+  }, [currentUser, loadInvitations])
+
+  const handleInvitationResponse = async (invitationId, status) => {
+    try {
+      await invitationsApi.respondToInvitation(invitationId, status)
+      await loadInvitations()
+
+      if (status === 'accepted') {
+        window.dispatchEvent(new Event('boards:refresh'))
+      }
+    } catch (err) {
+      setAuthError(err.message)
+    }
+  }
+
   const handleToggleAuth = async () => {
     if (!isAuthenticated) {
       window.location.href = authApi.getGitHubLoginUrl()
@@ -60,6 +105,7 @@ function App() {
 
     try {
       await authApi.logout()
+      setInvitations([])
       await loadCurrentUser()
     } catch (err) {
       setAuthError(err.message)
@@ -91,7 +137,9 @@ function App() {
         isAuthenticated={isAuthenticated}
         isSignInDisabled={false}
         activePage={activePage}
+        invitations={invitations}
         onNavigate={setActivePage}
+        onRespondToInvitation={handleInvitationResponse}
         onToggleAuth={handleToggleAuth}
       >
         {activePage === 'settings' ? (
