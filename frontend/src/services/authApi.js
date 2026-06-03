@@ -19,6 +19,10 @@ const request = async (path, options = {}) => {
 }
 
 export const authApi = {
+  deleteAccount: () =>
+    request('/auth/me', {
+      method: 'DELETE',
+    }),
   getCurrentUser: () => request('/auth/me'),
   getGitHubLoginUrl: () => `${API_BASE_URL}/auth/github`,
   login: (credentials) =>

@@ -1,8 +1,10 @@
 const crypto = require('crypto')
 const { promisify } = require('util')
 const { env } = require('../config/env')
+const boardRepository = require('../repositories/boardRepository')
 const oauthStateRepository = require('../repositories/oauthStateRepository')
 const sessionRepository = require('../repositories/sessionRepository')
+const taskRepository = require('../repositories/taskRepository')
 const userRepository = require('../repositories/userRepository')
 
 const scryptAsync = promisify(crypto.scrypt)
@@ -238,6 +240,20 @@ const clearSession = async (req) => {
   return clearCookie(cookieNames.session)
 }
 
+const deleteCurrentUser = async (req) => {
+  const user = await getCurrentUser(req)
+
+  if (!user) {
+    return null
+  }
+
+  await taskRepository.deleteTasksByOwnerId(user.id)
+  await boardRepository.deleteBoardsOwnedByUserId(user.id)
+  await userRepository.deleteUser(user.id)
+
+  return user
+}
+
 module.exports = {
   assertGitHubOAuthConfigured,
   buildGitHubAuthorizeUrl,
@@ -245,6 +261,7 @@ module.exports = {
   clearSession,
   cookieNames,
   createSession,
+  deleteCurrentUser,
   exchangeCodeForToken,
   fetchGitHubUser,
   getCurrentUser,

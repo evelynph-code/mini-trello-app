@@ -195,8 +195,13 @@ const updateUser = async (userId, userInput) => {
   return findUserById(userId)
 }
 
+const deleteUser = async (userId) => {
+  await usersCollection().doc(userId).delete()
+}
+
 module.exports = {
   createLocalUser,
+  deleteUser,
   findLocalUserCredentials,
   findUserByEmail,
   findUserById,

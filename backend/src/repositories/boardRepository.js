@@ -106,6 +106,12 @@ const findBoardsByUserId = async (userId) => {
   )
 }
 
+const findBoardsOwnedByUserId = async (userId) => {
+  const snapshot = await boardsCollection().where('ownerId', '==', userId).get()
+
+  return snapshot.docs.map(serializeBoard)
+}
+
 const findBoardById = async (boardId) => {
   const snapshot = await boardsCollection().doc(boardId).get()
 
@@ -146,11 +152,63 @@ const deleteBoard = async (boardId) => {
   await boardsCollection().doc(boardId).delete()
 }
 
+const deleteSnapshotDocs = async (snapshot) => {
+  if (snapshot.empty) {
+    return
+  }
+
+  const batchSize = 450
+
+  for (let index = 0; index < snapshot.docs.length; index += batchSize) {
+    const batch = getFirestore().batch()
+
+    snapshot.docs.slice(index, index + batchSize).forEach((doc) => {
+      batch.delete(doc.ref)
+    })
+
+    await batch.commit()
+  }
+}
+
+const deleteCardSubcollections = async (cardRef) => {
+  const [tasksSnapshot, commentsSnapshot, activitiesSnapshot] = await Promise.all([
+    cardRef.collection('tasks').get(),
+    cardRef.collection('comments').get(),
+    cardRef.collection('activities').get(),
+  ])
+
+  await Promise.all([
+    deleteSnapshotDocs(tasksSnapshot),
+    deleteSnapshotDocs(commentsSnapshot),
+    deleteSnapshotDocs(activitiesSnapshot),
+  ])
+}
+
+const deleteBoardCascade = async (boardId) => {
+  const boardRef = boardsCollection().doc(boardId)
+  const cardsSnapshot = await boardRef.collection('cards').get()
+
+  await Promise.all(cardsSnapshot.docs.map((cardDoc) => deleteCardSubcollections(cardDoc.ref)))
+  await deleteSnapshotDocs(cardsSnapshot)
+  await boardRef.delete()
+}
+
+const deleteBoardsOwnedByUserId = async (userId) => {
+  const boards = await findBoardsOwnedByUserId(userId)
+
+  await Promise.all(boards.map((board) => deleteBoardCascade(board.id)))
+
+  return boards.length
+}
+
 module.exports = {
   addBoardMember,
   createBoard,
   deleteBoard,
+  deleteBoardCascade,
+  deleteBoardsOwnedByUserId,
   findBoardById,
+  findBoardsOwnedByUserId,
   findBoardsByUserId,
   updateBoard,
 }

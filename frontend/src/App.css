@@ -108,6 +108,12 @@ button:hover {
   color: #0f4c81;
 }
 
+.topbar-icon-button {
+  width: 38px;
+  min-width: 38px;
+  padding: 0;
+}
+
 .notification-popover {
   position: absolute;
   top: calc(100% + 8px);
@@ -673,6 +679,17 @@ textarea {
   .comment-form,
   .comment-activity-grid {
     grid-template-columns: 1fr;
+  }
+
+  .card-details-header {
+    flex-direction: column;
+  }
+
+  .card-details > dl,
+  .task-board,
+  .comment-activity-panel {
+    margin-left: 12px;
+    margin-right: 12px;
   }
 
   .board-intro,

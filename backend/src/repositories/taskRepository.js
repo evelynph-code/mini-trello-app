@@ -129,10 +129,36 @@ const deleteTask = async (boardId, cardId, taskId) => {
   await tasksCollection(boardId, cardId).doc(taskId).delete()
 }
 
+const deleteTasksByOwnerId = async (ownerId) => {
+  const snapshot = await getFirestore()
+    .collectionGroup('tasks')
+    .where('ownerId', '==', ownerId)
+    .get()
+
+  if (snapshot.empty) {
+    return 0
+  }
+
+  const batchSize = 450
+
+  for (let index = 0; index < snapshot.docs.length; index += batchSize) {
+    const batch = getFirestore().batch()
+
+    snapshot.docs.slice(index, index + batchSize).forEach((doc) => {
+      batch.delete(doc.ref)
+    })
+
+    await batch.commit()
+  }
+
+  return snapshot.size
+}
+
 module.exports = {
   countRemainingTasksByCardId,
   createTask,
   deleteTask,
+  deleteTasksByOwnerId,
   findTaskById,
   findTasksByAssigneeAcrossCards,
   findTasksByCardId,

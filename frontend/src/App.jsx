@@ -122,6 +122,18 @@ function App() {
     }
   }
 
+  const handleDeleteAccount = async () => {
+    try {
+      await authApi.deleteAccount()
+      setNotifications([])
+      setCurrentUser(null)
+      setActivePage('dashboard')
+      setAuthError('')
+    } catch (err) {
+      setAuthError(err.message)
+    }
+  }
+
   if (!isAuthenticated) {
     return (
       <LandingPage
@@ -157,6 +169,8 @@ function App() {
           <SettingsPage
             currentUser={currentUser}
             isAuthenticated={isAuthenticated}
+            onDeleteAccount={handleDeleteAccount}
+            onSignOut={handleToggleAuth}
             onUserChange={setCurrentUser}
           />
         ) : (

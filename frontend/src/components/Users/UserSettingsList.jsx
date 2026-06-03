@@ -1,9 +1,9 @@
-import { Pencil, Save, X } from 'lucide-react'
+import { LogOut, Pencil, Save, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { usersApi } from '../../services/usersApi'
 import { IconButton } from '../Cards/IconButton'
 
-export function UserSettingsList({ currentUser, onUserChange }) {
+export function UserSettingsList({ currentUser, onDeleteAccount, onSignOut, onUserChange }) {
   const [displayName, setDisplayName] = useState(currentUser.name || '')
   const [error, setError] = useState('')
   const [isEditingName, setIsEditingName] = useState(false)
@@ -62,6 +62,16 @@ export function UserSettingsList({ currentUser, onUserChange }) {
     setError('')
     setIsEditingName(false)
     setIsEditingRole(false)
+  }
+
+  const handleDeleteAccount = () => {
+    const shouldDelete = window.confirm(
+      'Delete your account? This will remove your profile and sign you out.',
+    )
+
+    if (shouldDelete) {
+      onDeleteAccount()
+    }
   }
 
   return (
@@ -186,6 +196,32 @@ export function UserSettingsList({ currentUser, onUserChange }) {
             </IconButton>
           </div>
         )}
+      </article>
+
+      <article className="user-setting-row">
+        <div>
+          <p className="eyebrow">Session</p>
+          <h3>Sign out</h3>
+        </div>
+        <div className="user-setting-value">
+          <button type="button" onClick={onSignOut}>
+            <LogOut size={15} />
+            Sign out
+          </button>
+        </div>
+      </article>
+
+      <article className="user-setting-row account-danger-row">
+        <div>
+          <p className="eyebrow">Danger zone</p>
+          <h3>Delete account</h3>
+        </div>
+        <div className="user-setting-value">
+          <button type="button" className="danger-action-button" onClick={handleDeleteAccount}>
+            <Trash2 size={15} />
+            Delete account
+          </button>
+        </div>
       </article>
     </div>
   )

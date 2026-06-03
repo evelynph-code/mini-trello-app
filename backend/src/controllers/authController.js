@@ -182,7 +182,24 @@ const logout = async (req, res, next) => {
   }
 }
 
+const deleteCurrentUser = async (req, res, next) => {
+  try {
+    const deletedUser = await authService.deleteCurrentUser(req)
+
+    if (!deletedUser) {
+      return res.status(401).json({ error: 'Not authenticated.' })
+    }
+
+    res.setHeader('Set-Cookie', await authService.clearSession(req))
+
+    return res.json({ data: { success: true } })
+  } catch (err) {
+    return next(err)
+  }
+}
+
 module.exports = {
+  deleteCurrentUser,
   getCurrentUser,
   handleGitHubCallback,
   login,

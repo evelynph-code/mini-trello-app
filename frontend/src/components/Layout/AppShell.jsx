@@ -1,4 +1,4 @@
-import { Bell } from 'lucide-react'
+import { Bell, LogOut } from 'lucide-react'
 import { useState } from 'react'
 
 export function AppShell({
@@ -109,9 +109,22 @@ export function AppShell({
             <p>Guest workspace</p>
           )}
           {authError ? <p className="auth-error">{authError}</p> : null}
-          <button type="button" disabled={isSignInDisabled} onClick={onToggleAuth}>
-            {isAuthenticated ? 'Sign out' : 'Sign in with GitHub'}
-          </button>
+          {isAuthenticated ? (
+            <button
+              type="button"
+              aria-label="Sign out"
+              className="topbar-icon-button"
+              disabled={isSignInDisabled}
+              title="Sign out"
+              onClick={onToggleAuth}
+            >
+              <LogOut size={18} />
+            </button>
+          ) : (
+            <button type="button" disabled={isSignInDisabled} onClick={onToggleAuth}>
+              Sign in with GitHub
+            </button>
+          )}
         </div>
       </header>
       <div className="dashboard-shell">{children}</div>

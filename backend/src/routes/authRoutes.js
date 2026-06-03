@@ -5,6 +5,7 @@ const router = express.Router()
 
 router.get('/me', authController.getCurrentUser)
 router.patch('/me', authController.updateCurrentUser)
+router.delete('/me', authController.deleteCurrentUser)
 router.get('/github', authController.redirectToGitHub)
 router.get('/github/callback', authController.handleGitHubCallback)
 router.post('/login', authController.login)
