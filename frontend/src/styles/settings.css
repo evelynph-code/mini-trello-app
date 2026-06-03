@@ -6,6 +6,10 @@
   display: grid;
   gap: 16px;
   max-width: 760px;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 20px 56px rgba(6, 22, 44, 0.16);
+  backdrop-filter: blur(12px);
   padding: 22px;
 }
 
@@ -32,9 +36,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  border: 1px solid #dfe6ef;
+  border: 1px solid #d8e8f8;
   border-radius: 8px;
-  background: #fbfdff;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(6, 22, 44, 0.08);
   padding: 12px;
 }
 
