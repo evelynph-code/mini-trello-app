@@ -42,6 +42,17 @@ const findUserByUsername = async (username) => {
   return snapshot.empty ? null : serializeUser(snapshot.docs[0])
 }
 
+const findEmailVerificationByUserId = async (userId) => {
+  const snapshot = await usersCollection().doc(userId).get()
+  const data = snapshot.data() || {}
+
+  return {
+    emailVerificationCodeHash: data.emailVerificationCodeHash || '',
+    emailVerificationExpiresAt: data.emailVerificationExpiresAt?.toDate?.() || null,
+    user: serializeUser(snapshot),
+  }
+}
+
 const findLocalUserCredentials = async (identifier) => {
   const normalizedIdentifier = identifier.toLowerCase()
   const usernameSnapshot = await usersCollection()
@@ -195,6 +206,30 @@ const updateUser = async (userId, userInput) => {
   return findUserById(userId)
 }
 
+const setEmailVerificationCode = async (userId, codeHash, expiresAt) => {
+  await usersCollection().doc(userId).update({
+    emailVerificationCodeHash: codeHash,
+    emailVerificationExpiresAt: expiresAt,
+    emailVerificationSentAt: admin.firestore.FieldValue.serverTimestamp(),
+    emailVerificationStatus: 'pending',
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  })
+
+  return findUserById(userId)
+}
+
+const markEmailVerified = async (userId) => {
+  await usersCollection().doc(userId).update({
+    emailVerificationCodeHash: admin.firestore.FieldValue.delete(),
+    emailVerificationExpiresAt: admin.firestore.FieldValue.delete(),
+    emailVerificationStatus: 'verified',
+    emailVerified: true,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  })
+
+  return findUserById(userId)
+}
+
 const deleteUser = async (userId) => {
   await usersCollection().doc(userId).delete()
 }
@@ -203,11 +238,14 @@ module.exports = {
   createLocalUser,
   deleteUser,
   findLocalUserCredentials,
+  findEmailVerificationByUserId,
   findUserByEmail,
   findUserById,
   findUserByIdentifier,
   findUserByUsername,
   findUsers,
+  markEmailVerified,
+  setEmailVerificationCode,
   updateUser,
   upsertUser,
 }

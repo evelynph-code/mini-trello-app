@@ -153,7 +153,7 @@ export function LandingPage({ authError, isLoading, onAuthSuccess, onSignIn }) {
               {authMode === 'register' ? 'Create account' : 'Log in'}
             </button>
             {authMode === 'register' ? (
-              <p>Email verification is a placeholder until Nodemailer is installed.</p>
+              <p>After signup, check your inbox for a 6-digit verification code.</p>
             ) : null}
           </form>
         </div>

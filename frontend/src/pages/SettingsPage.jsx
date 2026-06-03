@@ -4,6 +4,7 @@ export function SettingsPage({
   currentUser,
   isAuthenticated,
   onDeleteAccount,
+  onResendVerificationEmail,
   onSignOut,
   onUserChange,
 }) {
@@ -16,6 +17,7 @@ export function SettingsPage({
           <UserSettingsList
             currentUser={currentUser}
             onDeleteAccount={onDeleteAccount}
+            onResendVerificationEmail={onResendVerificationEmail}
             onSignOut={onSignOut}
             onUserChange={onUserChange}
           />

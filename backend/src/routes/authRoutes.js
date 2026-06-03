@@ -11,5 +11,7 @@ router.get('/github/callback', authController.handleGitHubCallback)
 router.post('/login', authController.login)
 router.post('/logout', authController.logout)
 router.post('/register', authController.register)
+router.post('/verify-email', authController.verifyEmail)
+router.post('/verification-email', authController.resendEmailVerification)
 
 module.exports = router

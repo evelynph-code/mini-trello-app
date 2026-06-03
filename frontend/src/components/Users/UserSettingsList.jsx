@@ -1,14 +1,22 @@
-import { LogOut, Pencil, Save, Trash2, X } from 'lucide-react'
+import { LogOut, Mail, Pencil, Save, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { usersApi } from '../../services/usersApi'
 import { IconButton } from '../Cards/IconButton'
 
-export function UserSettingsList({ currentUser, onDeleteAccount, onSignOut, onUserChange }) {
+export function UserSettingsList({
+  currentUser,
+  onDeleteAccount,
+  onResendVerificationEmail,
+  onSignOut,
+  onUserChange,
+}) {
   const [displayName, setDisplayName] = useState(currentUser.name || '')
   const [error, setError] = useState('')
   const [isEditingName, setIsEditingName] = useState(false)
   const [isEditingRole, setIsEditingRole] = useState(false)
+  const [isSendingVerification, setIsSendingVerification] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [notice, setNotice] = useState('')
   const [role, setRole] = useState(currentUser.role || '')
 
   const saveUser = async (userInput) => {
@@ -74,6 +82,22 @@ export function UserSettingsList({ currentUser, onDeleteAccount, onSignOut, onUs
     }
   }
 
+  const handleResendVerificationEmail = async () => {
+    setError('')
+    setNotice('')
+    setIsSendingVerification(true)
+
+    try {
+      const result = await onResendVerificationEmail()
+
+      setNotice(result.message || 'Verification email sent. Check your inbox.')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setIsSendingVerification(false)
+    }
+  }
+
   return (
     <div className="user-settings-list">
       <div className="profile-heading">
@@ -89,6 +113,7 @@ export function UserSettingsList({ currentUser, onDeleteAccount, onSignOut, onUs
       </div>
 
       {error ? <p className="inline-error">{error}</p> : null}
+      {notice ? <p className="inline-success">{notice}</p> : null}
 
       <article className="user-setting-row">
         <div>
@@ -161,6 +186,16 @@ export function UserSettingsList({ currentUser, onDeleteAccount, onSignOut, onUs
             </div>
             <div className="user-setting-value">
               <strong>{currentUser.emailVerified ? 'Verified' : 'Pending'}</strong>
+              {!currentUser.emailVerified ? (
+                <button
+                  type="button"
+                  disabled={isSendingVerification}
+                  onClick={handleResendVerificationEmail}
+                >
+                  <Mail size={15} />
+                  {isSendingVerification ? 'Sending' : 'Resend'}
+                </button>
+              ) : null}
             </div>
           </article>
         </>

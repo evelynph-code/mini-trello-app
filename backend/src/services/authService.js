@@ -6,10 +6,12 @@ const oauthStateRepository = require('../repositories/oauthStateRepository')
 const sessionRepository = require('../repositories/sessionRepository')
 const taskRepository = require('../repositories/taskRepository')
 const userRepository = require('../repositories/userRepository')
+const emailService = require('./emailService')
 
 const scryptAsync = promisify(crypto.scrypt)
 const oauthStateMaxAgeSeconds = 60 * 10
 const sessionMaxAgeSeconds = 60 * 60 * 24
+const emailVerificationMaxAgeMs = 1000 * 60 * 15
 
 const cookieNames = {
   session: 'mini_trello_session',
@@ -17,6 +19,12 @@ const cookieNames = {
 }
 
 const createRandomToken = () => crypto.randomBytes(24).toString('hex')
+
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex')
+
+const createVerificationCode = () => String(crypto.randomInt(100000, 1000000))
+
+const hashVerificationCode = (userId, code) => hashToken(`${userId}:${code}`)
 
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase()
 
@@ -172,6 +180,39 @@ const createSession = async (user) => {
 
 const persistUser = (user) => userRepository.upsertUser(user)
 
+const sendEmailVerification = async (user) => {
+  if (!user || user.provider !== 'local' || user.emailVerified) {
+    return { status: user?.emailVerificationStatus || 'verified' }
+  }
+
+  const code = createVerificationCode()
+  const codeHash = hashVerificationCode(user.id, code)
+  const expiresAt = new Date(Date.now() + emailVerificationMaxAgeMs)
+  const updatedUser = await userRepository.setEmailVerificationCode(user.id, codeHash, expiresAt)
+
+  let delivery
+
+  try {
+    delivery = await emailService.sendVerificationEmail(updatedUser, code)
+  } catch (err) {
+    console.error('Unable to send verification email.', err)
+
+    return {
+      failed: true,
+      message: 'Account created, but the verification email could not be sent. Check SMTP settings and resend.',
+      status: updatedUser.emailVerificationStatus,
+    }
+  }
+
+  return {
+    ...delivery,
+    message: delivery.skipped
+      ? 'Email verification is pending. Configure SMTP to send verification emails.'
+      : 'Verification email sent. Check your inbox.',
+    status: updatedUser.emailVerificationStatus,
+  }
+}
+
 const registerLocalUser = async ({ email, name, password, username }) => {
   const normalizedEmail = normalizeEmail(email)
   const normalizedUsername = normalizeUsername(username)
@@ -190,7 +231,7 @@ const registerLocalUser = async ({ email, name, password, username }) => {
 
   const { hash, salt } = await hashPassword(password)
 
-  return userRepository.createLocalUser({
+  const user = await userRepository.createLocalUser({
     email: normalizedEmail,
     id: `local-${normalizedUsername}`,
     name,
@@ -199,6 +240,13 @@ const registerLocalUser = async ({ email, name, password, username }) => {
     role: 'Team member',
     username: normalizedUsername,
   })
+
+  const verification = await sendEmailVerification(user)
+
+  return {
+    user,
+    verification,
+  }
 }
 
 const loginLocalUser = async ({ identifier, password }) => {
@@ -217,6 +265,86 @@ const loginLocalUser = async ({ identifier, password }) => {
   )
 
   return isValidPassword ? credentials.user : null
+}
+
+const resendEmailVerification = async (req) => {
+  const user = await getCurrentUser(req)
+
+  if (!user) {
+    const error = new Error('Not authenticated.')
+    error.status = 401
+    throw error
+  }
+
+  if (user.provider !== 'local') {
+    const error = new Error('Only local accounts use email verification.')
+    error.status = 400
+    throw error
+  }
+
+  if (user.emailVerified) {
+    return {
+      message: 'Email is already verified.',
+      status: user.emailVerificationStatus,
+    }
+  }
+
+  return sendEmailVerification(user)
+}
+
+const verifyEmail = async (req, code) => {
+  const user = await getCurrentUser(req)
+  const normalizedCode = String(code || '').trim()
+
+  if (!user) {
+    const error = new Error('Not authenticated.')
+    error.status = 401
+    throw error
+  }
+
+  if (user.provider !== 'local') {
+    const error = new Error('Only local accounts use email verification.')
+    error.status = 400
+    throw error
+  }
+
+  if (user.emailVerified) {
+    return user
+  }
+
+  if (!/^\d{6}$/.test(normalizedCode)) {
+    const error = new Error('A valid 6-digit verification code is required.')
+    error.status = 400
+    throw error
+  }
+
+  const match = await userRepository.findEmailVerificationByUserId(user.id)
+
+  if (!match?.user || !match.emailVerificationCodeHash) {
+    const error = new Error('Verification code is invalid or has already been used.')
+    error.status = 400
+    throw error
+  }
+
+  if (!match.emailVerificationExpiresAt || match.emailVerificationExpiresAt.getTime() < Date.now()) {
+    const error = new Error('Verification code has expired.')
+    error.status = 400
+    throw error
+  }
+
+  const expectedHash = Buffer.from(match.emailVerificationCodeHash, 'hex')
+  const codeHash = Buffer.from(hashVerificationCode(user.id, normalizedCode), 'hex')
+
+  if (
+    expectedHash.length !== codeHash.length ||
+    !crypto.timingSafeEqual(expectedHash, codeHash)
+  ) {
+    const error = new Error('Verification code is invalid or has already been used.')
+    error.status = 400
+    throw error
+  }
+
+  return userRepository.markEmailVerified(match.user.id)
 }
 
 const getCurrentUser = async (req) => {
@@ -268,5 +396,7 @@ module.exports = {
   loginLocalUser,
   persistUser,
   registerLocalUser,
+  resendEmailVerification,
   validateState,
+  verifyEmail,
 }

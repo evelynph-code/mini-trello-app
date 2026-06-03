@@ -1,4 +1,3 @@
-const { env } = require('../config/env')
 const authService = require('../services/authService')
 const userService = require('../services/userService')
 
@@ -62,7 +61,7 @@ const register = async (req, res, next) => {
   }
 
   try {
-    const user = await authService.registerLocalUser(validation.input)
+    const { user, verification } = await authService.registerLocalUser(validation.input)
     const { sessionCookie } = await authService.createSession(user)
 
     res.setHeader('Set-Cookie', sessionCookie)
@@ -70,11 +69,28 @@ const register = async (req, res, next) => {
     return res.status(201).json({
       data: {
         user,
-        verification: {
-          message: 'Email verification is pending. Nodemailer will send this later.',
-          status: user.emailVerificationStatus,
-        },
+        verification,
       },
+    })
+  } catch (err) {
+    return next(err)
+  }
+}
+
+const resendEmailVerification = async (req, res, next) => {
+  try {
+    return res.json({
+      data: await authService.resendEmailVerification(req),
+    })
+  } catch (err) {
+    return next(err)
+  }
+}
+
+const verifyEmail = async (req, res, next) => {
+  try {
+    return res.json({
+      data: await authService.verifyEmail(req, req.body.code),
     })
   } catch (err) {
     return next(err)
@@ -206,5 +222,7 @@ module.exports = {
   logout,
   redirectToGitHub,
   register,
+  resendEmailVerification,
   updateCurrentUser,
+  verifyEmail,
 }

@@ -39,4 +39,13 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify(account),
     }),
+  resendVerificationEmail: () =>
+    request('/auth/verification-email', {
+      method: 'POST',
+    }),
+  verifyEmail: (code) =>
+    request('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    }),
 }
