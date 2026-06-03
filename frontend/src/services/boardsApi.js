@@ -24,6 +24,11 @@ const request = async (path, options = {}) => {
 }
 
 export const boardsApi = {
+  addBoardMember: (boardId, identifier) =>
+    request(`/boards/${boardId}/members`, {
+      method: 'POST',
+      body: JSON.stringify({ identifier }),
+    }),
   createBoard: (board) =>
     request('/boards', {
       method: 'POST',

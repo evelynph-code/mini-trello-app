@@ -101,7 +101,7 @@ function App() {
             onUserChange={setCurrentUser}
           />
         ) : (
-          <BoardPage isAuthenticated={isAuthenticated} />
+          <BoardPage currentUser={currentUser} isAuthenticated={isAuthenticated} />
         )}
       </AppShell>
     </DndProvider>

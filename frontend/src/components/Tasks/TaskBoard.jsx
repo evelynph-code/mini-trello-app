@@ -1,7 +1,8 @@
 import { CalendarDays, Flag, Pencil, Plus, Trash2, UserRound, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { socket } from '../../services/realtime'
 import { taskApi } from '../../services/taskApi'
+import { usersApi } from '../../services/usersApi'
 import { IconButton } from '../Cards/IconButton'
 
 const statuses = [
@@ -64,7 +65,7 @@ const getDeadlineState = (deadline, status) => {
   return { className: 'deadline-scheduled', label: 'Scheduled' }
 }
 
-function TaskCard({ task, onDelete, onEdit, onMove }) {
+function TaskCard({ canEdit, task, onDelete, onEdit, onMove }) {
   const deadlineState = getDeadlineState(task.deadline, task.status)
 
   return (
@@ -94,7 +95,14 @@ function TaskCard({ task, onDelete, onEdit, onMove }) {
             <UserRound size={13} />
             Assignee
           </dt>
-          <dd>{task.assigneeId || 'Unassigned'}</dd>
+          <dd>{task.assigneeName || task.assigneeId || 'Unassigned'}</dd>
+        </div>
+        <div>
+          <dt>
+            <UserRound size={13} />
+            Owner
+          </dt>
+          <dd>{task.ownerName || task.ownerId || 'Unknown'}</dd>
         </div>
         <div>
           <dt>
@@ -109,24 +117,28 @@ function TaskCard({ task, onDelete, onEdit, onMove }) {
           </dd>
         </div>
       </dl>
-      <label className="move-card-control">
-        Status
-        <select value={task.status} onChange={(event) => onMove(task, event.target.value)}>
-          {statuses.map((status) => (
-            <option key={status.id} value={status.id}>
-              {status.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <div className="card-actions">
-        <IconButton label="Edit task" onClick={() => onEdit(task)}>
-          <Pencil size={16} />
-        </IconButton>
-        <IconButton className="danger" label="Delete task" onClick={() => onDelete(task.id)}>
-          <Trash2 size={16} />
-        </IconButton>
-      </div>
+      {canEdit ? (
+        <>
+          <label className="move-card-control">
+            Status
+            <select value={task.status} onChange={(event) => onMove(task, event.target.value)}>
+              {statuses.map((status) => (
+                <option key={status.id} value={status.id}>
+                  {status.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="card-actions">
+            <IconButton label="Edit task" onClick={() => onEdit(task)}>
+              <Pencil size={16} />
+            </IconButton>
+            <IconButton className="danger" label="Delete task" onClick={() => onDelete(task.id)}>
+              <Trash2 size={16} />
+            </IconButton>
+          </div>
+        </>
+      ) : null}
     </article>
   )
 }
@@ -134,15 +146,22 @@ function TaskCard({ task, onDelete, onEdit, onMove }) {
 export function TaskBoard({
   boardId,
   cardId,
+  currentUser,
   onTasksChange,
+  selectedBoard,
 }) {
   const [error, setError] = useState('')
   const [form, setForm] = useState(emptyTaskForm)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [members, setMembers] = useState([])
   const [selectedTaskId, setSelectedTaskId] = useState('')
   const [tasks, setTasks] = useState([])
+  const memberIds = useMemo(
+    () => selectedBoard?.memberIds || [selectedBoard?.ownerId].filter(Boolean),
+    [selectedBoard],
+  )
 
   const loadTasks = async () => {
     setIsLoading(true)
@@ -196,6 +215,38 @@ export function TaskBoard({
       socket.off('tasks:changed')
     }
   }, [boardId, cardId, onTasksChange])
+
+  useEffect(() => {
+    let isMounted = true
+
+    Promise.resolve().then(async () => {
+      if (!selectedBoard) {
+        setMembers([])
+        return
+      }
+
+      try {
+        const users = await usersApi.getUsers()
+
+        if (isMounted) {
+          setMembers(users.filter((user) => memberIds.includes(user.id)))
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message)
+        }
+      }
+    })
+
+    return () => {
+      isMounted = false
+    }
+  }, [selectedBoard, memberIds])
+
+  const canEditTask = (task) =>
+    task.ownerId === currentUser?.id ||
+    task.assigneeId === currentUser?.id ||
+    (!task.ownerId && selectedBoard?.ownerId === currentUser?.id)
 
   const handleChange = (event) => {
     setForm((current) => ({
@@ -351,13 +402,19 @@ export function TaskBoard({
           </label>
           <label>
             Assignee
-            <input
+            <select
               aria-label="Task assignee"
               name="assigneeId"
-              placeholder="Display name or user id"
               value={form.assigneeId}
               onChange={handleChange}
-            />
+            >
+              <option value="">Unassigned</option>
+              {members.map((member) => (
+                <option key={member.id} value={member.id}>
+                  {member.name} ({member.username || member.id})
+                </option>
+              ))}
+            </select>
           </label>
           <label>
             Deadline
@@ -398,6 +455,7 @@ export function TaskBoard({
         {tasks.length === 0 ? <p className="empty-list-copy">No tasks in this card yet.</p> : null}
         {tasks.map((task) => (
           <TaskCard
+            canEdit={canEditTask(task)}
             key={task.id}
             task={task}
             onDelete={handleDelete}

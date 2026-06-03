@@ -442,7 +442,7 @@ button:disabled {
 
 .board-switcher-grid {
   display: grid;
-  grid-template-columns: minmax(220px, 0.55fr) minmax(320px, 1fr);
+  grid-template-columns: minmax(220px, 0.45fr) minmax(260px, 0.75fr) minmax(280px, 0.8fr);
   gap: 10px;
   align-items: start;
 }
@@ -1094,6 +1094,14 @@ button:disabled {
   border-radius: 8px;
   background: #fff4f4;
   color: #9f3333;
+  padding: 10px;
+}
+
+.inline-success {
+  border: 1px solid #b7e4c7;
+  border-radius: 8px;
+  background: #f0fff4;
+  color: #166534;
   padding: 10px;
 }
 

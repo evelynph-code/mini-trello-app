@@ -55,11 +55,15 @@ const serializeBoard = (snapshot) => {
   }
 
   const data = snapshot.data()
+  const memberIds = [data.ownerId, ...(Array.isArray(data.memberIds) ? data.memberIds : [])]
+    .filter(Boolean)
+    .filter((userId, index, userIds) => userIds.indexOf(userId) === index)
 
   return {
     description: data.description || '',
     id: snapshot.id,
     lists: hydrateLists(data.lists),
+    memberIds,
     name: data.name,
     ownerId: data.ownerId,
   }
@@ -72,6 +76,7 @@ const createBoard = async (ownerId, boardInput) => {
     createdAt: now,
     description: boardInput.description || '',
     lists: defaultLists,
+    memberIds: [ownerId],
     name: boardInput.name,
     ownerId,
     updatedAt: now,
@@ -83,15 +88,22 @@ const createBoard = async (ownerId, boardInput) => {
     description: board.description,
     id: boardRef.id,
     lists: board.lists,
+    memberIds: board.memberIds,
     name: board.name,
     ownerId,
   }
 }
 
-const findBoardsByOwnerId = async (ownerId) => {
-  const snapshot = await boardsCollection().where('ownerId', '==', ownerId).get()
+const findBoardsByUserId = async (userId) => {
+  const [ownedSnapshot, memberSnapshot] = await Promise.all([
+    boardsCollection().where('ownerId', '==', userId).get(),
+    boardsCollection().where('memberIds', 'array-contains', userId).get(),
+  ])
+  const boards = [...ownedSnapshot.docs, ...memberSnapshot.docs].map(serializeBoard)
 
-  return snapshot.docs.map(serializeBoard)
+  return boards.filter(
+    (board, index) => boards.findIndex((item) => item.id === board.id) === index,
+  )
 }
 
 const findBoardById = async (boardId) => {
@@ -119,14 +131,26 @@ const updateBoard = async (boardId, boardInput) => {
   return serializeBoard(snapshot)
 }
 
+const addBoardMember = async (boardId, userId) => {
+  const boardRef = boardsCollection().doc(boardId)
+
+  await boardRef.update({
+    memberIds: admin.firestore.FieldValue.arrayUnion(userId),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  })
+
+  return findBoardById(boardId)
+}
+
 const deleteBoard = async (boardId) => {
   await boardsCollection().doc(boardId).delete()
 }
 
 module.exports = {
+  addBoardMember,
   createBoard,
   deleteBoard,
   findBoardById,
-  findBoardsByOwnerId,
+  findBoardsByUserId,
   updateBoard,
 }

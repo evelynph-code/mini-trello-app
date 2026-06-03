@@ -17,9 +17,12 @@ const serializeTask = (snapshot) => {
 
   return {
     assigneeId: data.assigneeId || null,
+    assigneeName: data.assigneeName || '',
     deadline: data.deadline || '',
     description: data.description || '',
     id: snapshot.id,
+    ownerId: data.ownerId || null,
+    ownerName: data.ownerName || '',
     priority: data.priority || 'medium',
     status: data.status || 'icebox',
     title: data.title,
@@ -43,9 +46,12 @@ const createTask = async (boardId, cardId, taskInput) => {
   const taskRef = tasksCollection(boardId, cardId).doc()
   const task = {
     assigneeId: taskInput.assigneeId || null,
+    assigneeName: taskInput.assigneeName || '',
     createdAt: now,
     deadline: taskInput.deadline || '',
     description: taskInput.description || '',
+    ownerId: taskInput.ownerId,
+    ownerName: taskInput.ownerName,
     priority: taskInput.priority || 'medium',
     status: taskInput.status || 'icebox',
     title: taskInput.title,
@@ -56,9 +62,12 @@ const createTask = async (boardId, cardId, taskInput) => {
 
   return {
     assigneeId: task.assigneeId,
+    assigneeName: task.assigneeName,
     deadline: task.deadline,
     description: task.description,
     id: taskRef.id,
+    ownerId: task.ownerId,
+    ownerName: task.ownerName,
     priority: task.priority,
     status: task.status,
     title: task.title,
@@ -71,8 +80,11 @@ const updateTask = async (boardId, cardId, taskId, taskInput) => {
 
   await taskRef.update({
     assigneeId: taskInput.assigneeId || null,
+    assigneeName: taskInput.assigneeName || '',
     deadline: taskInput.deadline || '',
     description: taskInput.description || '',
+    ownerId: taskInput.ownerId,
+    ownerName: taskInput.ownerName || '',
     priority: taskInput.priority || 'medium',
     status: taskInput.status || 'icebox',
     title: taskInput.title,

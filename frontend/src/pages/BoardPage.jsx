@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import { BoardManager } from '../components/Boards/BoardManager'
 import { CardManager } from '../components/Cards/CardManager'
 
-export function BoardPage({ isAuthenticated }) {
+export function BoardPage({ currentUser, isAuthenticated }) {
   const [boards, setBoards] = useState([])
   const [selectedBoardId, setSelectedBoardId] = useState('')
 
@@ -25,6 +25,7 @@ export function BoardPage({ isAuthenticated }) {
         selectedBoardId={selectedBoardId}
       />
       <CardManager
+        currentUser={currentUser}
         isAuthenticated={isAuthenticated}
         onBoardsChange={setBoards}
         selectedBoard={selectedBoard}

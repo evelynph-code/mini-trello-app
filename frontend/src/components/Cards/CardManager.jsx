@@ -18,6 +18,7 @@ import { taskApi } from '../../services/taskApi'
 const countRemainingTasks = (tasks) => tasks.filter((task) => task.status !== 'done').length
 
 export function CardManager({
+  currentUser,
   isAuthenticated,
   onBoardsChange,
   selectedBoard,
@@ -551,6 +552,7 @@ export function CardManager({
           {detailsCard ? (
             <CardDetailsDialog
               card={detailsCard}
+              currentUser={currentUser}
               onClose={() => setDetailsCard(null)}
               onTasksChange={() => refreshTaskCount(detailsCard.id)}
               selectedBoard={selectedBoard}

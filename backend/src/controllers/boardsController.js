@@ -94,7 +94,35 @@ const deleteBoard = async (req, res, next) => {
   }
 }
 
+const addBoardMember = async (req, res, next) => {
+  const identifier = String(req.body.identifier || '').trim()
+
+  if (!identifier) {
+    return res.status(400).json({ error: 'User ID, username, or email is required.' })
+  }
+
+  try {
+    const result = await boardsService.addBoardMember(req.params.id, req.user.id, identifier)
+
+    if (!result) {
+      return res.status(404).json({ error: 'Board not found.' })
+    }
+
+    emitBoardChanged(req.params.id, {
+      board: result.board,
+      boardId: req.params.id,
+      member: result.member,
+      resource: 'members',
+    })
+
+    return res.json({ data: result })
+  } catch (err) {
+    return next(err)
+  }
+}
+
 module.exports = {
+  addBoardMember,
   createBoard,
   deleteBoard,
   getBoard,

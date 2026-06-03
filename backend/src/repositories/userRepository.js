@@ -67,6 +67,29 @@ const findLocalUserCredentials = async (identifier) => {
   }
 }
 
+const findUserByIdentifier = async (identifier) => {
+  const normalizedIdentifier = String(identifier || '').trim().toLowerCase()
+
+  if (!normalizedIdentifier) {
+    return null
+  }
+
+  const userById = await findUserById(identifier)
+
+  if (userById) {
+    return userById
+  }
+
+  return (
+    (await findUserByUsername(normalizedIdentifier)) ||
+    (await findUserByEmail(normalizedIdentifier)) ||
+    (await findUsers(normalizedIdentifier)).find(
+      (user) => user.name?.toLowerCase() === normalizedIdentifier,
+    ) ||
+    null
+  )
+}
+
 const findUsers = async (query = '') => {
   const snapshot = await usersCollection().orderBy('name').limit(50).get()
   const normalizedQuery = query.trim().toLowerCase()
@@ -177,6 +200,7 @@ module.exports = {
   findLocalUserCredentials,
   findUserByEmail,
   findUserById,
+  findUserByIdentifier,
   findUserByUsername,
   findUsers,
   updateUser,

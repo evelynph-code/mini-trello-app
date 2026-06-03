@@ -4,7 +4,7 @@ import { TaskBoard } from '../Tasks/TaskBoard'
 import { IconButton } from './IconButton'
 import { getListName } from './cardUtils'
 
-export function CardDetailsDialog({ card, onClose, onTasksChange, selectedBoard }) {
+export function CardDetailsDialog({ card, currentUser, onClose, onTasksChange, selectedBoard }) {
   return (
     <div
       className="task-card-screen"
@@ -44,7 +44,13 @@ export function CardDetailsDialog({ card, onClose, onTasksChange, selectedBoard 
             <dd>{card.description || 'No description'}</dd>
           </div>
         </dl>
-        <TaskBoard boardId={selectedBoard.id} cardId={card.id} onTasksChange={onTasksChange} />
+        <TaskBoard
+          boardId={selectedBoard.id}
+          cardId={card.id}
+          currentUser={currentUser}
+          onTasksChange={onTasksChange}
+          selectedBoard={selectedBoard}
+        />
         <CommentActivityPanel boardId={selectedBoard.id} cardId={card.id} />
       </article>
     </div>
