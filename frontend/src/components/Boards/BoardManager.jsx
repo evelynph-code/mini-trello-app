@@ -179,8 +179,8 @@ export function BoardManager({ isAuthenticated, onBoardsLoaded, onSelectBoard, s
           {selectedBoard ? (
             <form className="board-form board-member-form" onSubmit={handleInviteMember}>
               <input
-                aria-label="User ID, username, or email"
-                placeholder="Invite by user ID, username, or email"
+                aria-label="Handle or email"
+                placeholder="Invite by handle or email"
                 value={inviteIdentifier}
                 onChange={(event) => setInviteIdentifier(event.target.value)}
               />

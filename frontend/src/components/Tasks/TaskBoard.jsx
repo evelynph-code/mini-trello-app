@@ -411,7 +411,7 @@ export function TaskBoard({
               <option value="">Unassigned</option>
               {members.map((member) => (
                 <option key={member.id} value={member.id}>
-                  {member.name} ({member.username || member.id})
+                  {member.username ? `${member.name} (@${member.username})` : member.name}
                 </option>
               ))}
             </select>

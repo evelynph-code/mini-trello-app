@@ -132,9 +132,9 @@ export function LandingPage({ authError, isLoading, onAuthSuccess, onSignIn }) {
               </>
             ) : (
               <input
-                aria-label="Username or email"
+                aria-label="Handle or email"
                 name="identifier"
-                placeholder="Username or email"
+                placeholder="Handle or email"
                 value={form.identifier}
                 onChange={handleChange}
               />

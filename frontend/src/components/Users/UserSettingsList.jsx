@@ -14,10 +14,12 @@ export function UserSettingsList({
   const [error, setError] = useState('')
   const [isEditingName, setIsEditingName] = useState(false)
   const [isEditingRole, setIsEditingRole] = useState(false)
+  const [isEditingUsername, setIsEditingUsername] = useState(false)
   const [isSendingVerification, setIsSendingVerification] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [notice, setNotice] = useState('')
   const [role, setRole] = useState(currentUser.role || '')
+  const [username, setUsername] = useState(currentUser.username || '')
 
   const saveUser = async (userInput) => {
     setIsSaving(true)
@@ -29,8 +31,10 @@ export function UserSettingsList({
       onUserChange(updatedUser)
       setDisplayName(updatedUser.name)
       setRole(updatedUser.role || '')
+      setUsername(updatedUser.username || '')
       setIsEditingName(false)
       setIsEditingRole(false)
+      setIsEditingUsername(false)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -64,12 +68,27 @@ export function UserSettingsList({
     await saveUser({ role: nextRole })
   }
 
+  const handleUsernameSubmit = async (event) => {
+    event.preventDefault()
+
+    const nextUsername = username.trim().toLowerCase()
+
+    if (!/^[a-z0-9_-]{3,24}$/.test(nextUsername)) {
+      setError('Public handle must be 3-24 letters, numbers, underscores, or dashes.')
+      return
+    }
+
+    await saveUser({ username: nextUsername })
+  }
+
   const cancelEdit = () => {
     setDisplayName(currentUser.name || '')
     setRole(currentUser.role || '')
+    setUsername(currentUser.username || '')
     setError('')
     setIsEditingName(false)
     setIsEditingRole(false)
+    setIsEditingUsername(false)
   }
 
   const handleDeleteAccount = () => {
@@ -149,12 +168,37 @@ export function UserSettingsList({
 
       <article className="user-setting-row">
         <div>
-          <p className="eyebrow">User ID</p>
-          <h3>Account identifier</h3>
+          <p className="eyebrow">Username</p>
+          <h3>User ID</h3>
         </div>
-        <div className="user-setting-value">
-          <code>{currentUser.id}</code>
-        </div>
+        {isEditingUsername ? (
+          <form className="user-setting-form" onSubmit={handleUsernameSubmit}>
+            <input
+              aria-label="Public handle"
+              autoFocus
+              maxLength={24}
+              placeholder="public-handle"
+              value={username}
+              onChange={(event) =>
+                setUsername(event.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))
+              }
+            />
+            <button type="submit" disabled={isSaving}>
+              <Save size={15} />
+              {isSaving ? 'Saving' : 'Save'}
+            </button>
+            <IconButton label="Cancel handle edit" onClick={cancelEdit}>
+              <X size={15} />
+            </IconButton>
+          </form>
+        ) : (
+          <div className="user-setting-value">
+            <strong>{currentUser.username || 'Not set'}</strong>
+            <IconButton label="Edit public handle" onClick={() => setIsEditingUsername(true)}>
+              <Pencil size={15} />
+            </IconButton>
+          </div>
+        )}
       </article>
 
       <article className="user-setting-row">

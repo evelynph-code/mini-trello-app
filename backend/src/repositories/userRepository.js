@@ -85,12 +85,6 @@ const findUserByIdentifier = async (identifier) => {
     return null
   }
 
-  const userById = await findUserById(identifier)
-
-  if (userById) {
-    return userById
-  }
-
   return (
     (await findUserByUsername(normalizedIdentifier)) ||
     (await findUserByEmail(normalizedIdentifier)) ||
@@ -111,7 +105,7 @@ const findUsers = async (query = '') => {
   }
 
   return users.filter((user) =>
-    [user.id, user.name, user.role]
+    [user.name, user.role, user.username]
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(normalizedQuery)),
   )
@@ -199,6 +193,10 @@ const updateUser = async (userId, userInput) => {
 
   if (userInput.role) {
     update.role = userInput.role
+  }
+
+  if (userInput.username) {
+    update.username = userInput.username
   }
 
   await userRef.update(update)

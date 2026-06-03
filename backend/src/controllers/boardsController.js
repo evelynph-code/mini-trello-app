@@ -98,7 +98,7 @@ const inviteBoardMember = async (req, res, next) => {
   const identifier = String(req.body.identifier || '').trim()
 
   if (!identifier) {
-    return res.status(400).json({ error: 'User ID, username, or email is required.' })
+    return res.status(400).json({ error: 'Handle or email is required.' })
   }
 
   try {
