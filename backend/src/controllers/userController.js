@@ -31,6 +31,16 @@ const validateUserInput = (body) => {
     userInput.role = role
   }
 
+  if (Object.prototype.hasOwnProperty.call(body, 'username')) {
+    const username = String(body.username || '').trim().toLowerCase()
+
+    if (!/^[a-z0-9_-]{3,24}$/.test(username)) {
+      return { error: 'Public handle must be 3-24 letters, numbers, underscores, or dashes.' }
+    }
+
+    userInput.username = username
+  }
+
   if (Object.keys(userInput).length === 0) {
     return { error: 'No user updates provided.' }
   }

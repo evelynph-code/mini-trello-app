@@ -30,6 +30,13 @@ const findUserById = async (userId) => {
   return serializeUser(snapshot)
 }
 
+const findUsersByIds = async (userIds) => {
+  const uniqueUserIds = [...new Set(userIds.filter(Boolean))]
+  const users = await Promise.all(uniqueUserIds.map(findUserById))
+
+  return users.filter(Boolean)
+}
+
 const findUserByEmail = async (email) => {
   const snapshot = await usersCollection().where('email', '==', email).limit(1).get()
 
@@ -85,12 +92,6 @@ const findUserByIdentifier = async (identifier) => {
     return null
   }
 
-  const userById = await findUserById(identifier)
-
-  if (userById) {
-    return userById
-  }
-
   return (
     (await findUserByUsername(normalizedIdentifier)) ||
     (await findUserByEmail(normalizedIdentifier)) ||
@@ -111,7 +112,7 @@ const findUsers = async (query = '') => {
   }
 
   return users.filter((user) =>
-    [user.id, user.name, user.role]
+    [user.name, user.role, user.username]
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(normalizedQuery)),
   )
@@ -201,6 +202,10 @@ const updateUser = async (userId, userInput) => {
     update.role = userInput.role
   }
 
+  if (userInput.username) {
+    update.username = userInput.username
+  }
+
   await userRef.update(update)
 
   return findUserById(userId)
@@ -243,6 +248,7 @@ module.exports = {
   findUserById,
   findUserByIdentifier,
   findUserByUsername,
+  findUsersByIds,
   findUsers,
   markEmailVerified,
   setEmailVerificationCode,

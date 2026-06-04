@@ -1,3 +1,4 @@
+const { env } = require('../config/env')
 const authService = require('../services/authService')
 const userService = require('../services/userService')
 
@@ -35,7 +36,7 @@ const validateLocalAuthInput = (body, mode) => {
       return { error: 'Username must be 3-24 letters, numbers, underscores, or dashes.' }
     }
   } else if (!identifier) {
-    return { error: 'Username or email is required.' }
+    return { error: 'Handle or email is required.' }
   }
 
   if (password.length < 8) {
@@ -108,7 +109,7 @@ const login = async (req, res, next) => {
     const user = await authService.loginLocalUser(validation.input)
 
     if (!user) {
-      return res.status(401).json({ error: 'Invalid username/email or password.' })
+      return res.status(401).json({ error: 'Invalid handle/email or password.' })
     }
 
     const { sessionCookie } = await authService.createSession(user)
