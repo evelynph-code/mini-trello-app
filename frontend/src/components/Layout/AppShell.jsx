@@ -1,5 +1,5 @@
 import { Bell, LogOut } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export function AppShell({
   authError,
@@ -15,7 +15,28 @@ export function AppShell({
   onToggleAuth,
 }) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+  const notificationMenuRef = useRef(null)
   const pageTitle = activePage === 'settings' ? 'Settings' : 'Dashboard'
+
+  useEffect(() => {
+    if (!isNotificationsOpen) {
+      return undefined
+    }
+
+    const handlePointerDown = (event) => {
+      if (notificationMenuRef.current?.contains(event.target)) {
+        return
+      }
+
+      setIsNotificationsOpen(false)
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+    }
+  }, [isNotificationsOpen])
 
   return (
     <div className="app-shell">
@@ -59,7 +80,7 @@ export function AppShell({
             <p>Guest workspace</p>
           )}
           {isAuthenticated ? (
-            <div className="notification-menu">
+            <div className="notification-menu" ref={notificationMenuRef}>
               <button
                 type="button"
                 aria-label="Notifications"
