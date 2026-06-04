@@ -17,6 +17,7 @@ export function ListColumn({
   onEdit,
   onRenameList,
   onStartEditList,
+  onStartOrder,
   onReorder,
   onReorderList,
   onSaveOrder,
@@ -47,11 +48,17 @@ export function ListColumn({
         return
       }
 
-      if (normalizeListId(card.listId) !== list.id) {
-        onReorder(card, list.id, cards.length)
-        card.listId = list.id
-        card.index = cards.length
+      if (!monitor.isOver({ shallow: true })) {
+        return
       }
+
+      const targetIndex = normalizeListId(card.listId) === list.id
+        ? Math.max(cards.length - 1, 0)
+        : cards.length
+
+      onReorder(card, list.id, targetIndex)
+      card.listId = list.id
+      card.index = targetIndex
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
@@ -138,6 +145,7 @@ export function ListColumn({
           onEdit={onEdit}
           onReorder={onReorder}
           onSaveOrder={onSaveOrder}
+          onStartOrder={onStartOrder}
           onToggleDetails={onToggleDetails}
           selectedBoard={selectedBoard}
         />

@@ -13,6 +13,11 @@ import { socket } from '../../services/realtime'
 
 const countRemainingTasks = (tasks) => tasks.filter((task) => task.status !== 'done').length
 
+const cardOrderSignature = (cards) =>
+  cards
+    .map((card) => `${card.id}:${normalizeListId(card.listId)}:${Number.isFinite(card.position) ? card.position : 0}`)
+    .join('|')
+
 export function useCardManager({ isAuthenticated, onBoardsChange, selectedBoard }) {
   const [cards, setCards] = useState([])
   const [detailsCard, setDetailsCard] = useState(null)
@@ -25,7 +30,10 @@ export function useCardManager({ isAuthenticated, onBoardsChange, selectedBoard 
   const [selectedCardId, setSelectedCardId] = useState('')
   const [taskCounts, setTaskCounts] = useState({})
   const cardsRef = useRef([])
+  const hasCardOrderChangedRef = useRef(false)
+  const isCardOrderActiveRef = useRef(false)
   const listsRef = useRef([])
+  const queuedRemoteCardsRef = useRef(null)
 
   const orderedCards = sortCardsByPosition(
     cards.map((card) => ({
@@ -42,7 +50,12 @@ export function useCardManager({ isAuthenticated, onBoardsChange, selectedBoard 
     listsRef.current = selectedBoard?.lists || []
   }, [selectedBoard])
 
-  const applyRemoteCards = (nextCards) => {
+  const applyRemoteCards = (nextCards, options = {}) => {
+    if (!options.force && isCardOrderActiveRef.current) {
+      queuedRemoteCardsRef.current = nextCards
+      return
+    }
+
     setCards(applyListPositions(sortCardsByPosition(nextCards)))
     setDetailsCard((currentCard) => {
       if (!currentCard) {
@@ -51,6 +64,17 @@ export function useCardManager({ isAuthenticated, onBoardsChange, selectedBoard 
 
       return nextCards.find((card) => card.id === currentCard.id) || null
     })
+  }
+
+  const applyQueuedRemoteCards = () => {
+    if (!queuedRemoteCardsRef.current) {
+      return
+    }
+
+    const nextCards = queuedRemoteCardsRef.current
+
+    queuedRemoteCardsRef.current = null
+    applyRemoteCards(nextCards, { force: true })
   }
 
   const refreshTaskCount = async (cardId) => {
@@ -307,6 +331,12 @@ export function useCardManager({ isAuthenticated, onBoardsChange, selectedBoard 
     }
   }
 
+  const handleStartCardOrder = () => {
+    isCardOrderActiveRef.current = true
+    hasCardOrderChangedRef.current = false
+    queuedRemoteCardsRef.current = null
+  }
+
   const handleReorderCard = (draggedCard, targetListId, targetIndex) => {
     setCards((currentCards) => {
       const sourceIndex = currentCards.findIndex((card) => card.id === draggedCard.id)
@@ -338,26 +368,46 @@ export function useCardManager({ isAuthenticated, onBoardsChange, selectedBoard 
 
       const positionedCards = applyListPositions(nextCards)
 
+      if (cardOrderSignature(positionedCards) === cardOrderSignature(currentCards)) {
+        return currentCards
+      }
+
+      hasCardOrderChangedRef.current = true
       cardsRef.current = positionedCards
       return positionedCards
     })
   }
 
   const handleSaveCardOrder = async () => {
+    if (!isCardOrderActiveRef.current || !hasCardOrderChangedRef.current) {
+      isCardOrderActiveRef.current = false
+      hasCardOrderChangedRef.current = false
+      applyQueuedRemoteCards()
+      return
+    }
+
+    const cardsToSave = cardsRef.current.map((card) => ({
+      id: card.id,
+      listId: normalizeListId(card.listId),
+      position: Number.isFinite(card.position) ? card.position : 0,
+    }))
+
     try {
       const nextCards = await cardApi.updateBoardCardOrder(
         selectedBoard.id,
-        cardsRef.current.map((card) => ({
-          id: card.id,
-          listId: normalizeListId(card.listId),
-          position: Number.isFinite(card.position) ? card.position : 0,
-        })),
+        cardsToSave,
       )
 
-      applyRemoteCards(nextCards)
+      queuedRemoteCardsRef.current = null
+      applyRemoteCards(nextCards, { force: true })
     } catch (err) {
       setError(err.message)
+      queuedRemoteCardsRef.current = null
+      isCardOrderActiveRef.current = false
       await loadCards()
+    } finally {
+      isCardOrderActiveRef.current = false
+      hasCardOrderChangedRef.current = false
     }
   }
 
@@ -469,6 +519,7 @@ export function useCardManager({ isAuthenticated, onBoardsChange, selectedBoard 
     handleReorderList,
     handleSaveCardOrder,
     handleSaveListOrder,
+    handleStartCardOrder,
     handleToggleDetails,
     isEditing,
     isLoading,

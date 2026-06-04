@@ -28,6 +28,7 @@ export function CardManager({
     handleReorderList,
     handleSaveCardOrder,
     handleSaveListOrder,
+    handleStartCardOrder,
     handleToggleDetails,
     isEditing,
     isLoading,
@@ -100,6 +101,7 @@ export function CardManager({
                   onReorderList={handleReorderList}
                   onSaveOrder={handleSaveCardOrder}
                   onSaveListOrder={handleSaveListOrder}
+                  onStartOrder={handleStartCardOrder}
                   onToggleDetails={handleToggleDetails}
                   selectedBoard={selectedBoard}
                 />

@@ -13,6 +13,7 @@ export function BoardCard({
   onEdit,
   onReorder,
   onSaveOrder,
+  onStartOrder,
   onToggleDetails,
   selectedBoard,
 }) {
@@ -20,13 +21,33 @@ export function BoardCard({
   const pointerStartRef = useRef(null)
   const [, dropRef] = useDrop({
     accept: cardType,
-    hover: (draggedCard) => {
+    hover: (draggedCard, monitor) => {
       if (!cardRef.current || draggedCard.id === card.id) {
         return
       }
 
       if (draggedCard.listId === listId && draggedCard.index === index) {
         return
+      }
+
+      if (draggedCard.listId === listId) {
+        const hoverRect = cardRef.current.getBoundingClientRect()
+        const hoverMiddleY = (hoverRect.bottom - hoverRect.top) / 2
+        const pointerOffset = monitor.getClientOffset()
+
+        if (!pointerOffset) {
+          return
+        }
+
+        const hoverClientY = pointerOffset.y - hoverRect.top
+
+        if (draggedCard.index < index && hoverClientY < hoverMiddleY) {
+          return
+        }
+
+        if (draggedCard.index > index && hoverClientY > hoverMiddleY) {
+          return
+        }
       }
 
       onReorder(draggedCard, listId, index)
@@ -37,10 +58,14 @@ export function BoardCard({
 
   const [{ isDragging }, dragRef] = useDrag({
     type: cardType,
-    item: {
-      ...card,
-      index,
-      listId,
+    item: () => {
+      onStartOrder()
+
+      return {
+        ...card,
+        index,
+        listId,
+      }
     },
     end: () => onSaveOrder(),
     collect: (monitor) => ({
@@ -97,6 +122,8 @@ export function BoardCard({
         }
       }}
     >
+      <strong>{card.title}</strong>
+      <p>{card.description || 'No description'}</p>
       <div className="board-task-card-meta">
         <span className="board-task-list-name">
           {getListName(selectedBoard.lists, card.listId, card.listName)}
@@ -106,8 +133,6 @@ export function BoardCard({
           {card.taskCount || 0} {(card.taskCount || 0) === 1 ? 'task' : 'tasks'} remain
         </span>
       </div>
-      <strong>{card.title}</strong>
-      <p>{card.description || 'No description'}</p>
       <div className="card-actions" onClick={handleActionClick} onKeyDown={handleActionClick}>
         <IconButton label="Edit task card" onClick={() => onEdit(card)}>
           <Pencil size={16} />
