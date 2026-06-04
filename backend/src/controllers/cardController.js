@@ -1,5 +1,6 @@
 const { emitBoardChanged } = require('../realtime/socket')
 const cardService = require('../services/cardService')
+const notificationService = require('../services/notificationService')
 
 const emitCardsChanged = async (boardId, userId) => {
   const cards = await cardService.getCardsForBoard(boardId, userId)
@@ -89,6 +90,14 @@ const createBoardCard = async (req, res, next) => {
       return res.status(404).json({ error: 'Board not found.' })
     }
 
+    await notificationService.notifyBoardOwnerByIds({
+      actor: req.user,
+      boardId: req.params.boardId,
+      cardId: card.id,
+      message: `${req.user.name || 'Someone'} created card ${card.title}.`,
+      title: 'Card created',
+      type: 'board-card-created',
+    })
     await emitCardsChanged(req.params.boardId, req.user.id)
 
     return res.status(201).json({ data: card })
@@ -105,6 +114,11 @@ const updateBoardCard = async (req, res, next) => {
   }
 
   try {
+    const previousCard = await cardService.getCardForBoard(
+      req.params.boardId,
+      req.params.id,
+      req.user.id,
+    )
     const card = await cardService.updateCardForBoard(
       req.params.boardId,
       req.params.id,
@@ -122,6 +136,18 @@ const updateBoardCard = async (req, res, next) => {
       return res.status(404).json({ error: 'Card not found.' })
     }
 
+    const didMoveCard = previousCard?.listId !== card.listId
+
+    await notificationService.notifyBoardOwnerByIds({
+      actor: req.user,
+      boardId: req.params.boardId,
+      cardId: card.id,
+      message: didMoveCard
+        ? `${req.user.name || 'Someone'} moved ${card.title} to ${card.listName}.`
+        : `${req.user.name || 'Someone'} updated card ${card.title}.`,
+      title: didMoveCard ? 'Card moved' : 'Card updated',
+      type: didMoveCard ? 'board-card-moved' : 'board-card-updated',
+    })
     await emitCardsChanged(req.params.boardId, req.user.id)
 
     return res.json({ data: card })
@@ -138,6 +164,7 @@ const updateBoardCardOrder = async (req, res, next) => {
   }
 
   try {
+    const previousCards = await cardService.getCardsForBoard(req.params.boardId, req.user.id)
     const nextCards = await cardService.updateCardOrderForBoard(
       req.params.boardId,
       req.user.id,
@@ -152,6 +179,23 @@ const updateBoardCardOrder = async (req, res, next) => {
       return res.status(404).json({ error: 'Board not found.' })
     }
 
+    const previousCardsById = new Map((previousCards || []).map((card) => [card.id, card]))
+    const movedCards = nextCards.filter((card) => {
+      const previousCard = previousCardsById.get(card.id)
+
+      return previousCard && previousCard.listId !== card.listId
+    })
+
+    await notificationService.notifyBoardOwnerByIds({
+      actor: req.user,
+      boardId: req.params.boardId,
+      message:
+        movedCards.length > 0
+          ? `${req.user.name || 'Someone'} moved ${movedCards.length} card${movedCards.length === 1 ? '' : 's'} on your board.`
+          : `${req.user.name || 'Someone'} updated card order on your board.`,
+      title: movedCards.length > 0 ? 'Cards moved' : 'Card order updated',
+      type: movedCards.length > 0 ? 'board-cards-moved' : 'board-card-order-updated',
+    })
     emitBoardChanged(req.params.boardId, {
       boardId: req.params.boardId,
       cards: nextCards,
@@ -176,6 +220,13 @@ const deleteBoardCard = async (req, res, next) => {
       return res.status(404).json({ error: 'Card not found.' })
     }
 
+    await notificationService.notifyBoardOwnerByIds({
+      actor: req.user,
+      boardId: req.params.boardId,
+      message: `${req.user.name || 'Someone'} deleted card ${card.title}.`,
+      title: 'Card deleted',
+      type: 'board-card-deleted',
+    })
     await emitCardsChanged(req.params.boardId, req.user.id)
 
     return res.status(204).send()

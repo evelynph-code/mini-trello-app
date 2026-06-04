@@ -59,6 +59,14 @@ const createComment = async (req, res, next) => {
       message: `${req.user.name || 'Someone'} commented`,
       type: 'comment',
     })
+    await notificationService.notifyBoardOwnerByIds({
+      actor: req.user,
+      boardId: req.params.boardId,
+      cardId: req.params.cardId,
+      message: `${req.user.name || 'Someone'} commented on a card in your board.`,
+      title: 'New card comment',
+      type: 'board-card-comment',
+    })
     await notificationService.notifyTaskCommentByIds({
       actor: req.user,
       boardId: req.params.boardId,
