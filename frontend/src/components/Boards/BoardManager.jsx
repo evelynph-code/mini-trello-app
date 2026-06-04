@@ -435,11 +435,6 @@ export function BoardManager({
                   ) : null}
                   <div>
                     <strong>{selectedBoard.isDefault ? 'Default board' : 'Board settings'}</strong>
-                    <span>
-                      {selectedBoard.isDefault
-                        ? 'You can rename this board, but it cannot be deleted.'
-                        : 'Rename or delete this board.'}
-                    </span>
                   </div>
                   <form className="board-rename-form" onSubmit={handleRenameBoard}>
                     <input

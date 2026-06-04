@@ -15,13 +15,14 @@ export function AppShell({
   onToggleAuth,
 }) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+  const pageTitle = activePage === 'settings' ? 'Settings' : 'Dashboard'
 
   return (
     <div className="app-shell">
       <header className="topbar" aria-label="Application navigation">
         <div className="brand-block">
           <p className="eyebrow">Mini Trello</p>
-          <h1>Dashboard</h1>
+          <h1>{pageTitle}</h1>
         </div>
         <nav className="side-nav" aria-label="Primary">
           <button
