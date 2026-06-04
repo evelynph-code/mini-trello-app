@@ -850,7 +850,10 @@ textarea {
   .task-form,
   .task-list,
   .comment-form,
-  .comment-activity-grid {
+  .comment-activity-grid,
+  .board-create-form,
+  .board-member-form,
+  .board-rename-form {
     grid-template-columns: 1fr;
   }
 
@@ -866,7 +869,8 @@ textarea {
   }
 
   .board-intro,
-  .activity-bar {
+  .activity-bar,
+  .board-shared-tools {
     flex-direction: column;
   }
 

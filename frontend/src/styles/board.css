@@ -37,18 +37,187 @@
 
 .board-switcher-grid {
   display: grid;
-  grid-template-columns: minmax(220px, 0.45fr) minmax(260px, 0.75fr) minmax(280px, 0.8fr);
-  gap: 10px;
+  grid-template-columns: minmax(240px, 0.75fr) minmax(280px, 1fr);
+  gap: 12px;
   align-items: start;
 }
 
-.board-access-list {
+.board-control {
+  display: grid;
+  gap: 6px;
+}
+
+.board-control > span {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.board-create-form {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.board-create-form .inline-error,
+.board-create-form .inline-success {
+  grid-column: 1 / -1;
+}
+
+.board-wide-notice {
+  grid-column: 1 / -1;
+}
+
+.board-owner-tools {
   grid-column: 1 / -1;
   display: grid;
   gap: 10px;
   border-top: 1px solid var(--border);
   padding-top: 12px;
   animation: board-section-in 0.24s ease both;
+}
+
+.board-shared-tools {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  animation: board-section-in 0.24s ease both;
+}
+
+.shared-board-summary {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.board-shared-tools span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.owner-tools-header,
+.shared-tool-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.shared-tool-actions {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.shared-tool-actions button:not(.danger-button) {
+  border-color: #d8e8f8;
+  background: #f7fbff;
+}
+
+.shared-tool-actions button.active {
+  border-color: #74b7ff;
+  background: #e6f5ff;
+  color: #0f6fad;
+  box-shadow: 0 8px 20px rgba(6, 22, 44, 0.1);
+}
+
+.shared-tool-actions button span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0f6fad;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0 6px;
+}
+
+.owner-tool-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.owner-tool-actions button {
+  border-color: #d8e8f8;
+  background: #f7fbff;
+}
+
+.owner-tool-actions button.active {
+  border-color: #74b7ff;
+  background: #e6f5ff;
+  color: #0f6fad;
+  box-shadow: 0 8px 20px rgba(6, 22, 44, 0.1);
+}
+
+.owner-tool-actions button span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0f6fad;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0 6px;
+}
+
+.board-edit-panel {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #d8e8f8;
+  border-radius: 8px;
+  background: #fbfdff;
+  padding: 10px;
+  animation: board-section-in 0.24s ease both;
+}
+
+.board-edit-panel > div {
+  display: grid;
+  gap: 2px;
+}
+
+.board-edit-panel > div span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.board-rename-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.danger-button {
+  border-color: #f0b5b5;
+  background: #fff4f4;
+  color: #9f3333;
+}
+
+.danger-button:not(:disabled):hover {
+  border-color: #de6c6c;
+  background: #ffe8e8;
+  color: #842626;
+}
+
+.board-access-list {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #d8e8f8;
+  border-radius: 8px;
+  background: #fbfdff;
+  padding: 10px;
+  animation: board-section-in 0.24s ease both;
+}
+
+.board-member-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 8px;
 }
 
 .board-access-list > div {

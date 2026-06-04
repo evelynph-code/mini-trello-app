@@ -8,11 +8,20 @@ export function BoardPage({ currentUser, isAuthenticated }) {
 
   const selectedBoard = boards.find((board) => board.id === selectedBoardId) || null
 
-  const handleBoardsLoaded = useCallback((nextBoards) => {
+  const handleBoardsLoaded = useCallback((nextBoards, preferredBoardId = '') => {
     setBoards(nextBoards)
 
-    if (!selectedBoardId && nextBoards.length > 0) {
+    const preferredBoard = nextBoards.find((board) => board.id === preferredBoardId)
+    const currentBoard = nextBoards.find((board) => board.id === selectedBoardId)
+
+    if (preferredBoard) {
+      setSelectedBoardId(preferredBoard.id)
+    } else if (currentBoard) {
+      setSelectedBoardId(currentBoard.id)
+    } else if (nextBoards.length > 0) {
       setSelectedBoardId(nextBoards[0].id)
+    } else {
+      setSelectedBoardId('')
     }
   }, [selectedBoardId])
 

@@ -1,15 +1,6 @@
 const { emitBoardChanged } = require('../realtime/socket')
 const boardsService = require('../services/boardsService')
 
-const withoutMembers = (board) => {
-  if (!board) {
-    return board
-  }
-
-  const { members, ...boardDetails } = board
-  return boardDetails
-}
-
 const validateBoardInput = (body) => {
   if (!body.name || !body.name.trim()) {
     return 'Board name is required.'
@@ -35,7 +26,7 @@ const getBoard = async (req, res, next) => {
     }
 
     emitBoardChanged(req.params.id, {
-      board: withoutMembers(board),
+      board,
       boardId: req.params.id,
       resource: 'board',
     })
@@ -142,12 +133,32 @@ const removeBoardMember = async (req, res, next) => {
     }
 
     emitBoardChanged(req.params.id, {
-      board: withoutMembers(board),
+      board,
       boardId: req.params.id,
       resource: 'board',
     })
 
     return res.json({ data: board })
+  } catch (err) {
+    return next(err)
+  }
+}
+
+const leaveBoard = async (req, res, next) => {
+  try {
+    const board = await boardsService.leaveBoard(req.params.id, req.user.id)
+
+    if (!board) {
+      return res.status(404).json({ error: 'Board not found.' })
+    }
+
+    emitBoardChanged(req.params.id, {
+      board,
+      boardId: req.params.id,
+      resource: 'board',
+    })
+
+    return res.status(204).send()
   } catch (err) {
     return next(err)
   }
@@ -159,6 +170,7 @@ module.exports = {
   getBoard,
   getBoards,
   inviteBoardMember,
+  leaveBoard,
   removeBoardMember,
   updateBoard,
 }
