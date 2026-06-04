@@ -11,6 +11,24 @@ import { invitationsApi } from './services/invitationsApi'
 import { notificationsApi } from './services/notificationsApi'
 import './App.css'
 
+function LoadingPage() {
+  return (
+    <main className="app-loading-page" aria-live="polite" aria-busy="true">
+      <section className="app-loading-panel" aria-label="Loading application">
+        <div className="loading-mark">
+          <span />
+          <span />
+          <span />
+        </div>
+        <p className="eyebrow">Mini Trello</p>
+        <h1>Opening your workspace</h1>
+        <p>Checking your session and preparing your boards.</p>
+        <div className="loading-bar" />
+      </section>
+    </main>
+  )
+}
+
 function EmailVerificationGate({ authError, currentUser, onResend, onSignOut, onVerify }) {
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
@@ -234,6 +252,10 @@ function App() {
     setCurrentUser(user)
     setAuthError('')
     setActivePage('dashboard')
+  }
+
+  if (!isAuthReady) {
+    return <LoadingPage />
   }
 
   if (!isAuthenticated) {
