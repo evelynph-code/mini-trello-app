@@ -108,6 +108,38 @@ const notifyTaskAssignedByIds = async ({ actor, boardId, cardId, task }) => {
   return notifyTaskAssigned({ actor, board, card, task })
 }
 
+const notifyBoardOwner = async ({ actor, board, card, message, task, title, type }) => {
+  if (!board?.ownerId || board.ownerId === actor.id) {
+    return null
+  }
+
+  return notificationRepository.createNotification({
+    boardId: board.id,
+    boardName: board.name,
+    cardId: card?.id || null,
+    cardTitle: card?.title || '',
+    message,
+    taskId: task?.id || null,
+    taskTitle: task?.title || '',
+    title,
+    type,
+    userId: board.ownerId,
+  })
+}
+
+const notifyBoardOwnerByIds = async ({ actor, boardId, cardId, message, task, title, type }) => {
+  const [board, card] = await Promise.all([
+    boardRepository.findBoardById(boardId),
+    cardId ? cardRepository.findCardById(boardId, cardId) : Promise.resolve(null),
+  ])
+
+  if (!board) {
+    return null
+  }
+
+  return notifyBoardOwner({ actor, board, card, message, task, title, type })
+}
+
 const notifyTaskComment = async ({ actor, board, card, tasks }) => {
   const recipientIds = [
     ...new Set(
@@ -151,6 +183,8 @@ const markNotificationRead = (notificationId, userId) =>
 module.exports = {
   getNotifications,
   markNotificationRead,
+  notifyBoardOwner,
+  notifyBoardOwnerByIds,
   notifyTaskAssigned,
   notifyTaskAssignedByIds,
   notifyTaskComment,

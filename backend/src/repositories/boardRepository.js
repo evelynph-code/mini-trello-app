@@ -9,6 +9,8 @@ const defaultLists = [
   { id: 'later', name: 'Later' },
 ]
 
+const defaultBoardName = 'My Mini Trello Board'
+
 const normalizeList = (list) => {
   return {
     id: list.id || 'list',
@@ -62,10 +64,38 @@ const serializeBoard = (snapshot) => {
   return {
     description: data.description || '',
     id: snapshot.id,
+    isDefault: Boolean(data.isDefault),
     lists: hydrateLists(data.lists),
     memberIds,
     name: data.name,
     ownerId: data.ownerId,
+  }
+}
+
+const createDefaultBoard = async (ownerId) => {
+  const now = admin.firestore.FieldValue.serverTimestamp()
+  const boardRef = boardsCollection().doc()
+  const board = {
+    createdAt: now,
+    description: 'Start here, then create more boards as your work grows.',
+    isDefault: true,
+    lists: defaultLists,
+    memberIds: [ownerId],
+    name: defaultBoardName,
+    ownerId,
+    updatedAt: now,
+  }
+
+  await boardRef.set(board)
+
+  return {
+    description: board.description,
+    id: boardRef.id,
+    isDefault: true,
+    lists: board.lists,
+    memberIds: board.memberIds,
+    name: board.name,
+    ownerId,
   }
 }
 
@@ -75,6 +105,7 @@ const createBoard = async (ownerId, boardInput) => {
   const board = {
     createdAt: now,
     description: boardInput.description || '',
+    isDefault: false,
     lists: defaultLists,
     memberIds: [ownerId],
     name: boardInput.name,
@@ -87,11 +118,22 @@ const createBoard = async (ownerId, boardInput) => {
   return {
     description: board.description,
     id: boardRef.id,
+    isDefault: false,
     lists: board.lists,
     memberIds: board.memberIds,
     name: board.name,
     ownerId,
   }
+}
+
+const findDefaultBoardByUserId = async (userId) => {
+  const snapshot = await boardsCollection()
+    .where('ownerId', '==', userId)
+    .where('isDefault', '==', true)
+    .limit(1)
+    .get()
+
+  return snapshot.empty ? null : serializeBoard(snapshot.docs[0])
 }
 
 const findBoardsByUserId = async (userId) => {
@@ -215,10 +257,12 @@ const deleteBoardsOwnedByUserId = async (userId) => {
 module.exports = {
   addBoardMember,
   createBoard,
+  createDefaultBoard,
   deleteBoard,
   deleteBoardCascade,
   deleteBoardsOwnedByUserId,
   findBoardById,
+  findDefaultBoardByUserId,
   findBoardsOwnedByUserId,
   findBoardsByUserId,
   removeBoardMember,

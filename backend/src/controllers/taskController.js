@@ -111,6 +111,15 @@ const createTask = async (req, res, next) => {
       taskTitle: task.title,
       type: 'task-created',
     })
+    await notificationService.notifyBoardOwnerByIds({
+      actor: req.user,
+      boardId: req.params.boardId,
+      cardId: req.params.cardId,
+      message: `${req.user.name || 'Someone'} created task ${task.title}.`,
+      task,
+      title: 'Task created',
+      type: 'board-task-created',
+    })
     await notificationService.notifyTaskAssignedByIds({
       actor: req.user,
       boardId: req.params.boardId,
@@ -169,6 +178,18 @@ const updateTask = async (req, res, next) => {
         task,
       })
     }
+    await notificationService.notifyBoardOwnerByIds({
+      actor: req.user,
+      boardId: req.params.boardId,
+      cardId: req.params.cardId,
+      message:
+        previousTask?.status !== task.status
+          ? `${req.user.name || 'Someone'} changed ${task.title} from ${previousTask?.status || 'unknown'} to ${task.status}.`
+          : `${req.user.name || 'Someone'} updated task ${task.title}.`,
+      task,
+      title: previousTask?.status !== task.status ? 'Task status changed' : 'Task updated',
+      type: previousTask?.status !== task.status ? 'board-task-status-changed' : 'board-task-updated',
+    })
     await emitTaskEvents(req.params.boardId, req.params.cardId, req.user.id)
 
     return res.json({ data: task })
@@ -195,6 +216,15 @@ const deleteTask = async (req, res, next) => {
       taskId: task.id,
       taskTitle: task.title,
       type: 'task-deleted',
+    })
+    await notificationService.notifyBoardOwnerByIds({
+      actor: req.user,
+      boardId: req.params.boardId,
+      cardId: req.params.cardId,
+      message: `${req.user.name || 'Someone'} deleted task ${task.title}.`,
+      task,
+      title: 'Task deleted',
+      type: 'board-task-deleted',
     })
     await emitTaskEvents(req.params.boardId, req.params.cardId, req.user.id)
 
