@@ -38,28 +38,50 @@ const getTask = async (boardId, cardId, taskId, userId) => {
 const canEditTask = (task, board, userId) =>
   task.ownerId === userId ||
   task.assigneeId === userId ||
+  task.reviewerId === userId ||
   (!task.ownerId && board.ownerId === userId)
+
+const canDeleteTask = (task, board, userId) =>
+  task.ownerId === userId ||
+  task.assigneeId === userId ||
+  (!task.ownerId && board.ownerId === userId)
+
+const findBoardMember = async (board, userId, role) => {
+  if (!userId) {
+    return null
+  }
+
+  if (!board.memberIds?.includes(userId)) {
+    const error = new Error(`${role} must be a member of this board.`)
+    error.status = 400
+    throw error
+  }
+
+  const user = await userRepository.findUserById(userId)
+
+  if (!user) {
+    const error = new Error(`${role} not found.`)
+    error.status = 404
+    throw error
+  }
+
+  return user
+}
 
 const enrichTaskInput = async (board, userId, taskInput) => {
   const assigneeId = taskInput.assigneeId || null
+  const reviewerId = taskInput.reviewerId || null
   let assigneeName = ''
+  let reviewerName = ''
 
   if (assigneeId) {
-    if (!board.memberIds?.includes(assigneeId)) {
-      const error = new Error('Assignee must be a member of this board.')
-      error.status = 400
-      throw error
-    }
-
-    const assignee = await userRepository.findUserById(assigneeId)
-
-    if (!assignee) {
-      const error = new Error('Assignee not found.')
-      error.status = 404
-      throw error
-    }
-
+    const assignee = await findBoardMember(board, assigneeId, 'Assignee')
     assigneeName = assignee.name
+  }
+
+  if (reviewerId) {
+    const reviewer = await findBoardMember(board, reviewerId, 'Reviewer')
+    reviewerName = reviewer.name
   }
 
   return {
@@ -67,6 +89,8 @@ const enrichTaskInput = async (board, userId, taskInput) => {
     assigneeId,
     assigneeName,
     ownerId: taskInput.ownerId || userId,
+    reviewerId,
+    reviewerName,
   }
 }
 
@@ -103,7 +127,7 @@ const updateTask = async (boardId, cardId, taskId, userId, taskInput) => {
   }
 
   if (!canEditTask(task, access.board, userId)) {
-    const error = new Error('Only the task owner or assignee can edit this task.')
+    const error = new Error('Only the task owner, assignee, or reviewer can edit this task.')
     error.status = 403
     throw error
   }
@@ -133,7 +157,7 @@ const deleteTask = async (boardId, cardId, taskId, userId) => {
     return null
   }
 
-  if (!canEditTask(task, access.board, userId)) {
+  if (!canDeleteTask(task, access.board, userId)) {
     const error = new Error('Only the task owner or assignee can delete this task.')
     error.status = 403
     throw error

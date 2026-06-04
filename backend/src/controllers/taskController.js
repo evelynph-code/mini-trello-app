@@ -45,6 +45,7 @@ const buildTaskInput = (body) => ({
   deadline: body.deadline,
   description: body.description,
   priority: body.priority,
+  reviewerId: body.reviewerId,
   status: body.status,
   title: body.title.trim(),
 })
@@ -126,6 +127,14 @@ const createTask = async (req, res, next) => {
       cardId: req.params.cardId,
       task,
     })
+    if (task.status === 'waiting-review' && task.reviewerId) {
+      await notificationService.notifyTaskReviewRequestedByIds({
+        actor: req.user,
+        boardId: req.params.boardId,
+        cardId: req.params.cardId,
+        task,
+      })
+    }
     await emitTaskEvents(req.params.boardId, req.params.cardId, req.user.id)
 
     return res.status(201).json({ data: task })
@@ -161,17 +170,38 @@ const updateTask = async (req, res, next) => {
     }
 
     const didCompleteTask = previousTask?.status !== 'done' && task.status === 'done'
+    const didRequestReview =
+      task.status === 'waiting-review' &&
+      task.reviewerId &&
+      (previousTask?.status !== 'waiting-review' || previousTask?.reviewerId !== task.reviewerId)
+
+    const activityMessage = didCompleteTask
+      ? `${req.user.name || 'Someone'} marked ${task.title} as done`
+      : didRequestReview
+        ? `${req.user.name || 'Someone'} requested a review for ${task.title}`
+        : `${req.user.name || 'Someone'} updated task ${task.title}`
+    const activityType = didCompleteTask
+      ? 'task-completed'
+      : didRequestReview
+        ? 'task-review-requested'
+        : 'task-updated'
 
     await cardActivityService.addActivity(req.params.boardId, req.params.cardId, req.user, {
-      message: didCompleteTask
-        ? `${req.user.name || 'Someone'} marked ${task.title} as done`
-        : `${req.user.name || 'Someone'} updated task ${task.title}`,
+      message: activityMessage,
       taskId: task.id,
       taskTitle: task.title,
-      type: didCompleteTask ? 'task-completed' : 'task-updated',
+      type: activityType,
     })
     if (previousTask?.assigneeId !== task.assigneeId) {
       await notificationService.notifyTaskAssignedByIds({
+        actor: req.user,
+        boardId: req.params.boardId,
+        cardId: req.params.cardId,
+        task,
+      })
+    }
+    if (didRequestReview) {
+      await notificationService.notifyTaskReviewRequestedByIds({
         actor: req.user,
         boardId: req.params.boardId,
         cardId: req.params.cardId,

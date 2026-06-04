@@ -46,10 +46,13 @@ const getDueSoonNotifications = async (userId) => {
           cardId: task.cardId,
           createdAt: Date.now(),
           id: `due-soon-${taskBoard.id}-${task.cardId}-${task.id}`,
-          message:
+          message: formatTaskBoardMessage(
+            task,
+            taskBoard,
             daysUntilDue === 0
-              ? `${task.title} is due today.`
-              : `${task.title} is due in ${daysUntilDue} day${daysUntilDue === 1 ? '' : 's'}.`,
+              ? 'due today'
+              : `due in ${daysUntilDue} day${daysUntilDue === 1 ? '' : 's'}`,
+          ),
           status: 'unread',
           taskId: task.id,
           taskTitle: task.title,
@@ -76,6 +79,25 @@ const getNotifications = async (userId) => {
   ].sort((a, b) => b.createdAt - a.createdAt)
 }
 
+const formatTaskBoardMessage = (task, board, detail) =>
+  `"${task.title}" in "${board.name}" ${detail}.`
+
+const getBoardOwnerTaskDetail = ({ actor, task, type }) => {
+  const actorName = actor.name || 'Someone'
+
+  switch (type) {
+    case 'board-task-created':
+      return `created by ${actorName}`
+    case 'board-task-status-changed':
+      return `changed to ${task.status} by ${actorName}`
+    case 'board-task-deleted':
+      return `deleted by ${actorName}`
+    case 'board-task-updated':
+    default:
+      return `updated by ${actorName}`
+  }
+}
+
 const notifyTaskAssigned = async ({ actor, board, card, task }) => {
   if (!task.assigneeId || task.assigneeId === actor.id) {
     return null
@@ -86,7 +108,7 @@ const notifyTaskAssigned = async ({ actor, board, card, task }) => {
     boardName: board.name,
     cardId: card.id,
     cardTitle: card.title,
-    message: `${actor.name} assigned you to ${task.title}.`,
+    message: formatTaskBoardMessage(task, board, `assigned to you by ${actor.name || 'Someone'}`),
     taskId: task.id,
     taskTitle: task.title,
     title: 'Task assigned',
@@ -108,6 +130,42 @@ const notifyTaskAssignedByIds = async ({ actor, boardId, cardId, task }) => {
   return notifyTaskAssigned({ actor, board, card, task })
 }
 
+const notifyTaskReviewRequested = async ({ actor, board, card, task }) => {
+  if (!task.reviewerId || task.reviewerId === actor.id) {
+    return null
+  }
+
+  return notificationRepository.createNotification({
+    boardId: board.id,
+    boardName: board.name,
+    cardId: card.id,
+    cardTitle: card.title,
+    message: formatTaskBoardMessage(
+      task,
+      board,
+      `waiting for your review from ${actor.name || 'Someone'}`,
+    ),
+    taskId: task.id,
+    taskTitle: task.title,
+    title: 'Review requested',
+    type: 'task-review-requested',
+    userId: task.reviewerId,
+  })
+}
+
+const notifyTaskReviewRequestedByIds = async ({ actor, boardId, cardId, task }) => {
+  const [board, card] = await Promise.all([
+    boardRepository.findBoardById(boardId),
+    cardRepository.findCardById(boardId, cardId),
+  ])
+
+  if (!board || !card) {
+    return null
+  }
+
+  return notifyTaskReviewRequested({ actor, board, card, task })
+}
+
 const notifyBoardOwner = async ({ actor, board, card, message, task, title, type }) => {
   if (!board?.ownerId || board.ownerId === actor.id) {
     return null
@@ -118,7 +176,9 @@ const notifyBoardOwner = async ({ actor, board, card, message, task, title, type
     boardName: board.name,
     cardId: card?.id || null,
     cardTitle: card?.title || '',
-    message,
+    message: task
+      ? formatTaskBoardMessage(task, board, getBoardOwnerTaskDetail({ actor, task, type }))
+      : message,
     taskId: task?.id || null,
     taskTitle: task?.title || '',
     title,
@@ -155,7 +215,7 @@ const notifyTaskComment = async ({ actor, board, card, tasks }) => {
       boardName: board.name,
       cardId: card.id,
       cardTitle: card.title,
-      message: `${actor.name} commented on ${card.title}.`,
+      message: `"${card.title}" in "${board.name}" commented on by ${actor.name || 'Someone'}.`,
       title: 'New task card comment',
       type: 'task-comment',
       userId,
@@ -189,4 +249,6 @@ module.exports = {
   notifyTaskAssignedByIds,
   notifyTaskComment,
   notifyTaskCommentByIds,
+  notifyTaskReviewRequested,
+  notifyTaskReviewRequestedByIds,
 }

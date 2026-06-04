@@ -20,6 +20,7 @@ const emptyTaskForm = {
   deadline: '',
   description: '',
   priority: 'medium',
+  reviewerId: '',
   status: 'icebox',
   title: '',
 }
@@ -65,8 +66,14 @@ const getDeadlineState = (deadline, status) => {
   return { className: 'deadline-scheduled', label: 'Scheduled' }
 }
 
-function TaskCard({ canEdit, task, onDelete, onEdit, onMove }) {
+function TaskCard({ canDelete, canEdit, members, task, onDelete, onEdit, onMove }) {
   const deadlineState = getDeadlineState(task.deadline, task.status)
+  const [nextStatus, setNextStatus] = useState(task.status || 'icebox')
+  const [reviewerId, setReviewerId] = useState(task.reviewerId || '')
+  const isWaitingForReview = nextStatus === 'waiting-review'
+  const didChangeStatus = nextStatus !== (task.status || 'icebox')
+  const didChangeReviewer = reviewerId !== (task.reviewerId || '')
+  const canApplyMove = didChangeStatus || (isWaitingForReview && didChangeReviewer)
 
   return (
     <article className="task-item">
@@ -104,6 +111,15 @@ function TaskCard({ canEdit, task, onDelete, onEdit, onMove }) {
           </dt>
           <dd>{task.ownerName || task.ownerId || 'Unknown'}</dd>
         </div>
+        {task.status === 'waiting-review' || task.reviewerId ? (
+          <div>
+            <dt>
+              <UserRound size={13} />
+              Reviewer
+            </dt>
+            <dd>{task.reviewerName || task.reviewerId || 'Unassigned'}</dd>
+          </div>
+        ) : null}
         <div>
           <dt>
             <CalendarDays size={13} />
@@ -119,23 +135,50 @@ function TaskCard({ canEdit, task, onDelete, onEdit, onMove }) {
       </dl>
       {canEdit ? (
         <>
-          <label className="move-card-control">
-            Status
-            <select value={task.status} onChange={(event) => onMove(task, event.target.value)}>
-              {statuses.map((status) => (
-                <option key={status.id} value={status.id}>
-                  {status.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="task-review-controls">
+            <label className="move-card-control">
+              Status
+              <select value={nextStatus} onChange={(event) => setNextStatus(event.target.value)}>
+                {statuses.map((status) => (
+                  <option key={status.id} value={status.id}>
+                    {status.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {isWaitingForReview ? (
+              <label className="move-card-control">
+                Reviewer
+                <select value={reviewerId} onChange={(event) => setReviewerId(event.target.value)}>
+                  <option value="">Choose reviewer</option>
+                  {members.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.username ? `${member.name} (@${member.username})` : member.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            {canApplyMove ? (
+              <button
+                type="button"
+                className="details-button task-apply-review"
+                disabled={isWaitingForReview && !reviewerId}
+                onClick={() => onMove(task, nextStatus, isWaitingForReview ? reviewerId : '')}
+              >
+                Apply
+              </button>
+            ) : null}
+          </div>
           <div className="card-actions">
             <IconButton label="Edit task" onClick={() => onEdit(task)}>
               <Pencil size={16} />
             </IconButton>
-            <IconButton className="danger" label="Delete task" onClick={() => onDelete(task.id)}>
-              <Trash2 size={16} />
-            </IconButton>
+            {canDelete ? (
+              <IconButton className="danger" label="Delete task" onClick={() => onDelete(task.id)}>
+                <Trash2 size={16} />
+              </IconButton>
+            ) : null}
           </div>
         </>
       ) : null}
@@ -246,12 +289,21 @@ export function TaskBoard({
   const canEditTask = (task) =>
     task.ownerId === currentUser?.id ||
     task.assigneeId === currentUser?.id ||
+    task.reviewerId === currentUser?.id ||
+    (!task.ownerId && selectedBoard?.ownerId === currentUser?.id)
+
+  const canDeleteTask = (task) =>
+    task.ownerId === currentUser?.id ||
+    task.assigneeId === currentUser?.id ||
     (!task.ownerId && selectedBoard?.ownerId === currentUser?.id)
 
   const handleChange = (event) => {
+    const { name, value } = event.target
+
     setForm((current) => ({
       ...current,
-      [event.target.name]: event.target.value,
+      [name]: value,
+      ...(name === 'status' && value !== 'waiting-review' ? { reviewerId: '' } : {}),
     }))
   }
 
@@ -266,6 +318,11 @@ export function TaskBoard({
     event.preventDefault()
 
     if (!form.title.trim()) {
+      return
+    }
+
+    if (form.status === 'waiting-review' && !form.reviewerId) {
+      setError('Choose a reviewer before moving this task to waiting for review.')
       return
     }
 
@@ -290,6 +347,7 @@ export function TaskBoard({
       deadline: task.deadline || '',
       description: task.description || '',
       priority: task.priority || 'medium',
+      reviewerId: task.reviewerId || '',
       status: task.status || 'icebox',
       title: task.title,
     })
@@ -308,8 +366,15 @@ export function TaskBoard({
     }
   }
 
-  const handleMove = async (task, status) => {
-    if (!task?.id || task.status === status) {
+  const handleMove = async (task, status, reviewerId = '') => {
+    const nextReviewerId = status === 'waiting-review' ? reviewerId : ''
+
+    if (!task?.id || (task.status === status && (task.reviewerId || '') === nextReviewerId)) {
+      return
+    }
+
+    if (status === 'waiting-review' && !nextReviewerId) {
+      setError('Choose a reviewer before moving this task to waiting for review.')
       return
     }
 
@@ -319,6 +384,7 @@ export function TaskBoard({
         deadline: task.deadline || '',
         description: task.description || '',
         priority: task.priority || 'medium',
+        reviewerId: nextReviewerId,
         status,
         title: task.title,
       })
@@ -416,6 +482,24 @@ export function TaskBoard({
               ))}
             </select>
           </label>
+          {form.status === 'waiting-review' ? (
+            <label>
+              Reviewer
+              <select
+                aria-label="Task reviewer"
+                name="reviewerId"
+                value={form.reviewerId}
+                onChange={handleChange}
+              >
+                <option value="">Choose reviewer</option>
+                {members.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.username ? `${member.name} (@${member.username})` : member.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <label>
             Deadline
             <input
@@ -455,8 +539,10 @@ export function TaskBoard({
         {tasks.length === 0 ? <p className="empty-list-copy">No tasks in this card yet.</p> : null}
         {tasks.map((task) => (
           <TaskCard
+            canDelete={canDeleteTask(task)}
             canEdit={canEditTask(task)}
-            key={task.id}
+            key={`${task.id}-${task.status || 'icebox'}-${task.reviewerId || 'none'}`}
+            members={members}
             task={task}
             onDelete={handleDelete}
             onEdit={handleEdit}

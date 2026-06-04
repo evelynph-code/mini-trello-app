@@ -933,6 +933,37 @@
   font-size: 13px;
 }
 
+.task-review-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.move-card-control {
+  display: grid;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.move-card-control select {
+  min-width: 0;
+  color: var(--text-strong);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.task-apply-review {
+  min-height: 36px;
+}
+
+.task-apply-review:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .deadline-pill {
   display: inline-flex;
   align-items: center;
@@ -946,6 +977,12 @@
 .deadline-empty {
   background: #f1f5f9;
   color: #64748b;
+}
+
+@media (max-width: 560px) {
+  .task-review-controls {
+    grid-template-columns: 1fr;
+  }
 }
 
 .deadline-scheduled {
