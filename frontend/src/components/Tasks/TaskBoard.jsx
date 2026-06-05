@@ -1,5 +1,5 @@
 import { CalendarDays, Flag, Pencil, Plus, Trash2, UserRound, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { socket } from '../../services/realtime'
 import { taskApi } from '../../services/taskApi'
 import { usersApi } from '../../services/usersApi'
@@ -66,7 +66,17 @@ const getDeadlineState = (deadline, status) => {
   return { className: 'deadline-scheduled', label: 'Scheduled' }
 }
 
-function TaskCard({ canDelete, canEdit, members, task, onDelete, onEdit, onMove }) {
+function TaskCard({
+  canDelete,
+  canEdit,
+  isFocused,
+  members,
+  task,
+  taskRef,
+  onDelete,
+  onEdit,
+  onMove,
+}) {
   const deadlineState = getDeadlineState(task.deadline, task.status)
   const [nextStatus, setNextStatus] = useState(task.status || 'icebox')
   const [reviewerId, setReviewerId] = useState(task.reviewerId || '')
@@ -76,7 +86,11 @@ function TaskCard({ canDelete, canEdit, members, task, onDelete, onEdit, onMove 
   const canApplyMove = didChangeStatus || (isWaitingForReview && didChangeReviewer)
 
   return (
-    <article className="task-item">
+    <article
+      ref={taskRef}
+      className={`task-item ${isFocused ? 'is-focused-task' : ''}`}
+      data-task-id={task.id}
+    >
       <div className="task-item-header">
         <strong>{task.title}</strong>
         <div className="task-badges">
@@ -190,6 +204,7 @@ export function TaskBoard({
   boardId,
   cardId,
   currentUser,
+  focusTaskId,
   onTasksChange,
   selectedBoard,
 }) {
@@ -201,6 +216,7 @@ export function TaskBoard({
   const [members, setMembers] = useState([])
   const [selectedTaskId, setSelectedTaskId] = useState('')
   const [tasks, setTasks] = useState([])
+  const taskRefs = useRef(new Map())
   const memberIds = useMemo(
     () => selectedBoard?.memberIds || [selectedBoard?.ownerId].filter(Boolean),
     [selectedBoard],
@@ -285,6 +301,27 @@ export function TaskBoard({
       isMounted = false
     }
   }, [selectedBoard, memberIds])
+
+  useEffect(() => {
+    if (!focusTaskId || tasks.length === 0) {
+      return undefined
+    }
+
+    let isMounted = true
+
+    Promise.resolve().then(() => {
+      if (isMounted) {
+        taskRefs.current.get(focusTaskId)?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        })
+      }
+    })
+
+    return () => {
+      isMounted = false
+    }
+  }, [focusTaskId, tasks])
 
   const canEditTask = (task) =>
     task.ownerId === currentUser?.id ||
@@ -546,9 +583,17 @@ export function TaskBoard({
           <TaskCard
             canDelete={canDeleteTask(task)}
             canEdit={canEditTask(task)}
+            isFocused={focusTaskId === task.id}
             key={`${task.id}-${task.status || 'icebox'}-${task.reviewerId || 'none'}`}
             members={members}
             task={task}
+            taskRef={(node) => {
+              if (node) {
+                taskRefs.current.set(task.id, node)
+              } else {
+                taskRefs.current.delete(task.id)
+              }
+            }}
             onDelete={handleDelete}
             onEdit={handleEdit}
             onMove={handleMove}

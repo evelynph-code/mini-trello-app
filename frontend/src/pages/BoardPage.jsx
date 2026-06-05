@@ -65,6 +65,7 @@ export function BoardPage({ currentUser, focusTarget, isAuthenticated }) {
       />
       <CardManager
         currentUser={currentUser}
+        focusTarget={focusTarget}
         isAuthenticated={isAuthenticated}
         onBoardsChange={setBoards}
         selectedBoard={selectedBoard}

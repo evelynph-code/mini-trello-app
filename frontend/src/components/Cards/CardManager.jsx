@@ -119,6 +119,7 @@ export function CardManager({
             <CardDetailsDialog
               card={detailsCard}
               currentUser={currentUser}
+              focusTaskId={focusTarget?.cardId === detailsCard.id ? focusTarget.taskId : ''}
               onClose={() => setDetailsCard(null)}
               onTasksChange={() => refreshTaskCount(detailsCard.id)}
               selectedBoard={selectedBoard}

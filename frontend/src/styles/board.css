@@ -845,6 +845,13 @@
   padding: 10px;
 }
 
+.task-item.is-focused-task {
+  border-color: #2f8cff;
+  box-shadow:
+    0 0 0 3px rgba(47, 140, 255, 0.16),
+    0 10px 24px rgba(6, 22, 44, 0.14);
+}
+
 .task-item-header {
   display: flex;
   justify-content: space-between;
