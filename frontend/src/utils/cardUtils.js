@@ -51,3 +51,8 @@ export const applyListPositions = (cards) => {
       })),
   )
 }
+
+export const cardOrderSignature = (cards) =>
+  cards
+    .map((card) => `${card.id}:${normalizeListId(card.listId)}:${Number.isFinite(card.position) ? card.position : 0}`)
+    .join('|')

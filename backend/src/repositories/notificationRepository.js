@@ -1,4 +1,4 @@
-const { admin, getFirestore } = require('../config/firebase')
+const { getFirestore } = require('../config/firebase')
 
 const notificationsCollection = () => getFirestore().collection('notifications')
 
@@ -55,7 +55,7 @@ const findUnreadNotificationsByUserId = async (userId) => {
   return snapshot.docs.map(serializeNotification)
 }
 
-const markNotificationRead = async (notificationId, userId) => {
+const deleteNotificationForUser = async (notificationId, userId) => {
   const notificationRef = notificationsCollection().doc(notificationId)
   const snapshot = await notificationRef.get()
 
@@ -63,17 +63,16 @@ const markNotificationRead = async (notificationId, userId) => {
     return null
   }
 
-  await notificationRef.update({
-    status: 'read',
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-  })
+  const notification = serializeNotification(snapshot)
 
-  return serializeNotification(await notificationRef.get())
+  await notificationRef.delete()
+
+  return notification
 }
 
 module.exports = {
   createNotification,
   createNotifications,
+  deleteNotificationForUser,
   findUnreadNotificationsByUserId,
-  markNotificationRead,
 }

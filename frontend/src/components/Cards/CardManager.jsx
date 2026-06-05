@@ -1,13 +1,14 @@
 import { Plus } from 'lucide-react'
+import { useCardManager } from '../../hooks/useCardManager'
+import { normalizeListId } from '../../utils/cardUtils'
 import { CardDetailsDialog, EditCardDialog } from './CardDialogs'
 import { ListColumn } from './ListColumn'
-import { normalizeListId } from './cardUtils'
-import { useCardManager } from './useCardManager'
 
 export function CardManager({
   currentUser,
   focusTarget,
   isAuthenticated,
+  onFocusTargetConsumed,
   onBoardsChange,
   selectedBoard,
 }) {
@@ -35,12 +36,19 @@ export function CardManager({
     isLoading,
     listForm,
     orderedCards,
+    focusedTaskId,
     refreshTaskCount,
     resetForm,
     setDetailsCard,
     setEditingListId,
     setListForm,
-  } = useCardManager({ focusTarget, isAuthenticated, onBoardsChange, selectedBoard })
+  } = useCardManager({
+    focusTarget,
+    isAuthenticated,
+    onBoardsChange,
+    onFocusTargetConsumed,
+    selectedBoard,
+  })
 
   return (
     <section className="board-workspace" aria-labelledby="assigned-title">
@@ -119,6 +127,7 @@ export function CardManager({
             <CardDetailsDialog
               card={detailsCard}
               currentUser={currentUser}
+              focusTaskId={focusedTaskId}
               onClose={() => setDetailsCard(null)}
               onTasksChange={() => refreshTaskCount(detailsCard.id)}
               selectedBoard={selectedBoard}

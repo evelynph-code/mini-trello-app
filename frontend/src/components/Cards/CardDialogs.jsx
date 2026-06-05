@@ -3,9 +3,16 @@ import { createPortal } from 'react-dom'
 import { CommentActivityPanel } from '../Tasks/CommentActivityPanel'
 import { TaskBoard } from '../Tasks/TaskBoard'
 import { IconButton } from './IconButton'
-import { getListName } from './cardUtils'
+import { getListName } from '../../utils/cardUtils'
 
-export function CardDetailsDialog({ card, currentUser, onClose, onTasksChange, selectedBoard }) {
+export function CardDetailsDialog({
+  card,
+  currentUser,
+  focusTaskId,
+  onClose,
+  onTasksChange,
+  selectedBoard,
+}) {
   return createPortal(
     <div
       className="task-card-screen"
@@ -50,6 +57,7 @@ export function CardDetailsDialog({ card, currentUser, onClose, onTasksChange, s
           boardId={selectedBoard.id}
           cardId={card.id}
           currentUser={currentUser}
+          focusTaskId={focusTaskId}
           onTasksChange={onTasksChange}
           selectedBoard={selectedBoard}
         />

@@ -1,76 +1,44 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { cardApi } from '../services/cardApi'
+import { socket } from '../services/realtime'
 import {
   applyListPositions,
-  createListId,
+  cardOrderSignature,
   emptyForm,
   getListName,
   normalizeListId,
   sortCardsByPosition,
-} from './cardUtils'
-import { boardsApi } from '../../services/boardsApi'
-import { cardApi } from '../../services/cardApi'
-import { socket } from '../../services/realtime'
+} from '../utils/cardUtils'
+import { useCardTaskSummaries } from './useCardTaskSummaries'
+import { useListManager } from './useListManager'
 
-const summarizeTasks = (tasks) => {
-  const activeTasks = tasks.filter((task) => task.status !== 'done')
-  const dueTasks = activeTasks
-    .filter((task) => task.deadline)
-    .sort((firstTask, secondTask) => firstTask.deadline.localeCompare(secondTask.deadline))
-
-  return {
-    dueTask: dueTasks[0]
-      ? {
-          deadline: dueTasks[0].deadline,
-          id: dueTasks[0].id,
-          status: dueTasks[0].status,
-          title: dueTasks[0].title,
-        }
-      : null,
-    remainingCount: activeTasks.length,
-  }
-}
-
-const normalizeTaskSummary = (summary) => {
-  if (typeof summary === 'number') {
-    return { dueTask: null, remainingCount: summary }
-  }
-
-  return {
-    dueTask: summary?.dueTask || null,
-    remainingCount: summary?.remainingCount || 0,
-  }
-}
-
-const normalizeTaskSummaries = (summaries) =>
-  Object.fromEntries(
-    Object.entries(summaries || {}).map(([cardId, summary]) => [
-      cardId,
-      normalizeTaskSummary(summary),
-    ]),
-  )
-
-const cardOrderSignature = (cards) =>
-  cards
-    .map((card) => `${card.id}:${normalizeListId(card.listId)}:${Number.isFinite(card.position) ? card.position : 0}`)
-    .join('|')
-
-export function useCardManager({ focusTarget, isAuthenticated, onBoardsChange, selectedBoard }) {
+export function useCardManager({
+  focusTarget,
+  isAuthenticated,
+  onBoardsChange,
+  onFocusTargetConsumed,
+  selectedBoard,
+}) {
   const [cards, setCards] = useState([])
   const [detailsCard, setDetailsCard] = useState(null)
   const [error, setError] = useState('')
+  const [focusedTaskId, setFocusedTaskId] = useState('')
   const [form, setForm] = useState(emptyForm)
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [editingListId, setEditingListId] = useState('')
-  const [listForm, setListForm] = useState({ name: '' })
   const [selectedCardId, setSelectedCardId] = useState('')
-  const [taskSummaries, setTaskSummaries] = useState({})
   const cardsRef = useRef([])
   const hasCardOrderChangedRef = useRef(false)
   const appliedFocusTargetRef = useRef(0)
   const isCardOrderActiveRef = useRef(false)
-  const listsRef = useRef([])
   const queuedRemoteCardsRef = useRef(null)
+  const {
+    clearTaskSummaries,
+    refreshTaskCount,
+    refreshTaskCounts,
+    taskSummaries,
+    updateTaskSummary,
+  } = useCardTaskSummaries({ selectedBoard, setError })
 
   const orderedCards = sortCardsByPosition(
     cards.map((card) => ({
@@ -83,10 +51,6 @@ export function useCardManager({ focusTarget, isAuthenticated, onBoardsChange, s
   useEffect(() => {
     cardsRef.current = cards
   }, [cards])
-
-  useEffect(() => {
-    listsRef.current = selectedBoard?.lists || []
-  }, [selectedBoard])
 
   const applyRemoteCards = (nextCards, options = {}) => {
     if (!options.force && isCardOrderActiveRef.current) {
@@ -115,43 +79,11 @@ export function useCardManager({ focusTarget, isAuthenticated, onBoardsChange, s
     applyRemoteCards(nextCards, { force: true })
   }
 
-  const refreshTaskCount = async (cardId) => {
-    if (!selectedBoard || !cardId) {
-      return
-    }
-
-    try {
-      const nextTaskSummaries = normalizeTaskSummaries(
-        await cardApi.getBoardCardTaskSummaries(selectedBoard.id),
-      )
-
-      setTaskSummaries((currentSummaries) => ({
-        ...currentSummaries,
-        [cardId]: nextTaskSummaries[cardId] || { dueTask: null, remainingCount: 0 },
-      }))
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
-  const refreshTaskCounts = async (boardId) => {
-    if (!boardId) {
-      setTaskSummaries({})
-      return
-    }
-
-    try {
-      setTaskSummaries(normalizeTaskSummaries(await cardApi.getBoardCardTaskSummaries(boardId)))
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
   const loadCards = async () => {
     if (!isAuthenticated || !selectedBoard) {
       setCards([])
       setDetailsCard(null)
-      setTaskSummaries({})
+      clearTaskSummaries()
       return
     }
 
@@ -181,7 +113,7 @@ export function useCardManager({ focusTarget, isAuthenticated, onBoardsChange, s
       if (!isAuthenticated || !selectedBoard) {
         setCards([])
         setDetailsCard(null)
-        setTaskSummaries({})
+        clearTaskSummaries()
         return
       }
 
@@ -209,7 +141,7 @@ export function useCardManager({ focusTarget, isAuthenticated, onBoardsChange, s
     return () => {
       isMounted = false
     }
-  }, [isAuthenticated, selectedBoard])
+  }, [clearTaskSummaries, isAuthenticated, refreshTaskCounts, selectedBoard])
 
   useEffect(() => {
     if (!isAuthenticated || !selectedBoard) {
@@ -233,10 +165,7 @@ export function useCardManager({ focusTarget, isAuthenticated, onBoardsChange, s
       }
 
       if (payload.resource === 'tasks' && payload.cardId && payload.tasks) {
-        setTaskSummaries((currentSummaries) => ({
-          ...currentSummaries,
-          [payload.cardId]: summarizeTasks(payload.tasks),
-        }))
+        updateTaskSummary(payload.cardId, payload.tasks)
       }
     }
 
@@ -248,7 +177,7 @@ export function useCardManager({ focusTarget, isAuthenticated, onBoardsChange, s
       socket.emit('board:leave', { boardId: selectedBoard.id })
       socket.off('board:changed', handleBoardChanged)
     }
-  }, [isAuthenticated, onBoardsChange, selectedBoard])
+  }, [isAuthenticated, onBoardsChange, refreshTaskCounts, selectedBoard, updateTaskSummary])
 
   const handleChange = (event) => {
     setForm((current) => ({
@@ -280,13 +209,14 @@ export function useCardManager({ focusTarget, isAuthenticated, onBoardsChange, s
     }
   }
 
-  const handleShowDetails = useCallback(async (cardId) => {
+  const handleShowDetails = useCallback(async (cardId, nextFocusedTaskId = '') => {
     if (!selectedBoard?.id) {
       return
     }
 
     try {
       setSelectedCardId(cardId)
+      setFocusedTaskId(nextFocusedTaskId)
       setDetailsCard(await cardApi.getBoardCard(selectedBoard.id, cardId))
     } catch (err) {
       setError(err.message)
@@ -316,14 +246,15 @@ export function useCardManager({ focusTarget, isAuthenticated, onBoardsChange, s
     Promise.resolve().then(() => {
       if (isMounted) {
         appliedFocusTargetRef.current = focusTarget.openedAt
-        handleShowDetails(focusTarget.cardId)
+        handleShowDetails(focusTarget.cardId, focusTarget.taskId || '')
+        onFocusTargetConsumed?.()
       }
     })
 
     return () => {
       isMounted = false
     }
-  }, [focusTarget, handleShowDetails, selectedBoard])
+  }, [focusTarget, handleShowDetails, onFocusTargetConsumed, selectedBoard])
 
   const handleEdit = (card) => {
     setForm({
@@ -341,40 +272,6 @@ export function useCardManager({ focusTarget, isAuthenticated, onBoardsChange, s
       await cardApi.deleteBoardCard(selectedBoard.id, cardId)
       resetForm()
       setDetailsCard(null)
-      await loadCards()
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
-  const persistBoardLists = async (lists) => {
-    const updatedBoard = await boardsApi.updateBoard(selectedBoard.id, {
-      description: selectedBoard.description || '',
-      lists,
-      name: selectedBoard.name,
-    })
-
-    onBoardsChange((currentBoards) =>
-      currentBoards.map((board) => (board.id === updatedBoard.id ? updatedBoard : board)),
-    )
-
-    return updatedBoard
-  }
-
-  const handleDeleteList = async (listId) => {
-    if (selectedBoard.lists.length <= 1) {
-      setError('Keep at least one list on the board.')
-      return
-    }
-
-    try {
-      const cardsInList = cards.filter((card) => normalizeListId(card.listId) === listId)
-
-      await Promise.all(cardsInList.map((card) => cardApi.deleteBoardCard(selectedBoard.id, card.id)))
-      await persistBoardLists(selectedBoard.lists.filter((list) => list.id !== listId))
-      setDetailsCard((currentCard) =>
-        currentCard && normalizeListId(currentCard.listId) === listId ? null : currentCard,
-      )
       await loadCards()
     } catch (err) {
       setError(err.message)
@@ -478,101 +375,32 @@ export function useCardManager({ focusTarget, isAuthenticated, onBoardsChange, s
     }
   }
 
-  const handleReorderList = (draggedList, targetIndex) => {
-    onBoardsChange((currentBoards) =>
-      currentBoards.map((board) => {
-        if (board.id !== selectedBoard.id) {
-          return board
-        }
-
-        const sourceIndex = board.lists.findIndex((list) => list.id === draggedList.id)
-
-        if (sourceIndex < 0) {
-          return board
-        }
-
-        const nextLists = [...board.lists]
-        const [movingList] = nextLists.splice(sourceIndex, 1)
-
-        nextLists.splice(targetIndex, 0, movingList)
-        listsRef.current = nextLists
-
-        return {
-          ...board,
-          lists: nextLists,
-        }
-      }),
-    )
-  }
-
-  const handleSaveListOrder = async () => {
-    try {
-      await persistBoardLists(listsRef.current)
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
-  const handleCreateList = async (event) => {
-    event.preventDefault()
-
-    const name = listForm.name.trim()
-
-    if (!name) {
-      return
-    }
-
-    try {
-      const nextLists = [
-        ...selectedBoard.lists,
-        {
-          id: createListId(name, selectedBoard.lists),
-          name,
-        },
-      ]
-
-      await persistBoardLists(nextLists)
-      setListForm({ name: '' })
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
-  const handleRenameList = async (listId, rawName) => {
-    const name = String(rawName || '').trim()
-    setEditingListId('')
-
-    if (!name) {
-      return
-    }
-
-    const currentList = selectedBoard.lists.find((list) => list.id === listId)
-
-    if (!currentList || currentList.name === name) {
-      return
-    }
-
-    try {
-      await persistBoardLists(
-        selectedBoard.lists.map((list) => (list.id === listId ? { ...list, name } : list)),
-      )
-
-      if (detailsCard?.listId === listId) {
-        setDetailsCard((currentCard) => ({
-          ...currentCard,
-          listName: name,
-        }))
-      }
-    } catch (err) {
-      setError(err.message)
-    }
-  }
+  const {
+    editingListId,
+    handleCreateList,
+    handleDeleteList,
+    handleRenameList,
+    handleReorderList,
+    handleSaveListOrder,
+    listForm,
+    setEditingListId,
+    setListForm,
+  } = useListManager({
+    cards,
+    detailsCard,
+    loadCards,
+    onBoardsChange,
+    selectedBoard,
+    setDetailsCard,
+    setError,
+  })
 
   return {
     cards,
     detailsCard,
     editingListId,
     error,
+    focusedTaskId,
     form,
     handleChange,
     handleCreateCardInList,

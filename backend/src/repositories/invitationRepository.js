@@ -67,21 +67,16 @@ const createInvitation = async (invitationInput) => {
   return serializeInvitation(await invitationRef.get())
 }
 
-const updateInvitationStatus = async (invitationId, status) => {
+const deleteInvitation = async (invitationId) => {
   const invitationRef = invitationsCollection().doc(invitationId)
 
-  await invitationRef.update({
-    status,
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-  })
-
-  return serializeInvitation(await invitationRef.get())
+  await invitationRef.delete()
 }
 
 module.exports = {
   createInvitation,
+  deleteInvitation,
   findInvitationById,
   findPendingInvitation,
   findPendingInvitationsByUserId,
-  updateInvitationStatus,
 }
