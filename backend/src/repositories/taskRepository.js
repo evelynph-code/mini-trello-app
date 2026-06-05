@@ -43,17 +43,35 @@ const findTaskById = async (boardId, cardId, taskId) => {
   return serializeTask(snapshot)
 }
 
-const countRemainingTasksByCardId = async (boardId, cardIds) => {
-  const countEntries = await Promise.all(
+const summarizeTasksByCardId = async (boardId, cardIds) => {
+  const summaryEntries = await Promise.all(
     cardIds.map(async (cardId) => {
       const snapshot = await tasksCollection(boardId, cardId).get()
-      const remainingCount = snapshot.docs.filter((doc) => doc.data().status !== 'done').length
+      const activeTasks = snapshot.docs
+        .map(serializeTask)
+        .filter((task) => task && task.status !== 'done')
+      const dueTasks = activeTasks
+        .filter((task) => task.deadline)
+        .sort((firstTask, secondTask) => firstTask.deadline.localeCompare(secondTask.deadline))
 
-      return [cardId, remainingCount]
+      return [
+        cardId,
+        {
+          dueTask: dueTasks[0]
+            ? {
+                deadline: dueTasks[0].deadline,
+                id: dueTasks[0].id,
+                status: dueTasks[0].status,
+                title: dueTasks[0].title,
+              }
+            : null,
+          remainingCount: activeTasks.length,
+        },
+      ]
     }),
   )
 
-  return Object.fromEntries(countEntries)
+  return Object.fromEntries(summaryEntries)
 }
 
 const findTasksByAssigneeAcrossCards = async (boardId, cardIds, assigneeId) => {
@@ -163,12 +181,12 @@ const deleteTasksByOwnerId = async (ownerId) => {
 }
 
 module.exports = {
-  countRemainingTasksByCardId,
   createTask,
   deleteTask,
   deleteTasksByOwnerId,
   findTaskById,
   findTasksByAssigneeAcrossCards,
   findTasksByCardId,
+  summarizeTasksByCardId,
   updateTask,
 }

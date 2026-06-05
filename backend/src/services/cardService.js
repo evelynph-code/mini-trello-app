@@ -31,7 +31,7 @@ const getCardForBoard = async (boardId, cardId, userId) => {
   return cardRepository.findCardById(boardId, cardId)
 }
 
-const getTaskCountsForBoard = async (boardId, userId) => {
+const getTaskSummariesForBoard = async (boardId, userId) => {
   const board = await ensureBoardAccess(boardId, userId)
 
   if (!board) {
@@ -40,7 +40,7 @@ const getTaskCountsForBoard = async (boardId, userId) => {
 
   const cards = await cardRepository.findCardsByBoardId(boardId)
 
-  return taskRepository.countRemainingTasksByCardId(
+  return taskRepository.summarizeTasksByCardId(
     boardId,
     cards.map((card) => card.id),
   )
@@ -141,7 +141,7 @@ module.exports = {
   getCardForBoard,
   getCardsForBoard,
   getCardsForUser,
-  getTaskCountsForBoard,
+  getTaskSummariesForBoard,
   updateCardOrderForBoard,
   updateCardForBoard,
 }

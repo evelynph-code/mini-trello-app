@@ -536,7 +536,12 @@ export function TaskBoard({
       ) : null}
 
       <div className="task-list">
-        {tasks.length === 0 ? <p className="empty-list-copy">No tasks in this card yet.</p> : null}
+        {tasks.length === 0 ? (
+          <div className="empty-list-copy rich-empty-state">
+            <strong>No tasks yet</strong>
+            <span>Break this card into small steps with assignees, deadlines, and review status.</span>
+          </div>
+        ) : null}
         {tasks.map((task) => (
           <TaskCard
             canDelete={canDeleteTask(task)}

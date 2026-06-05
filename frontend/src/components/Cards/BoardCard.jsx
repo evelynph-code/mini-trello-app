@@ -1,8 +1,37 @@
 import { useRef } from 'react'
-import { ListChecks, Pencil, Trash2 } from 'lucide-react'
+import { CalendarDays, ListChecks, Pencil, Trash2 } from 'lucide-react'
 import { useDrag, useDrop } from 'react-dnd'
 import { IconButton } from './IconButton'
 import { cardType, getListName } from './cardUtils'
+
+const getDueState = (deadline) => {
+  if (!deadline) {
+    return null
+  }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const deadlineDate = new Date(`${deadline}T00:00:00`)
+  const dayDifference = Math.round((deadlineDate - today) / 86400000)
+
+  if (dayDifference < 0) {
+    return { className: 'deadline-overdue', label: 'Overdue' }
+  }
+
+  if (dayDifference === 0) {
+    return { className: 'deadline-today', label: 'Due today' }
+  }
+
+  if (dayDifference <= 2) {
+    return { className: 'deadline-soon', label: `Due in ${dayDifference}d` }
+  }
+
+  return { className: 'deadline-scheduled', label: new Intl.DateTimeFormat(undefined, {
+    day: 'numeric',
+    month: 'short',
+  }).format(deadlineDate) }
+}
 
 export function BoardCard({
   card,
@@ -19,6 +48,8 @@ export function BoardCard({
 }) {
   const cardRef = useRef(null)
   const pointerStartRef = useRef(null)
+  const dueTask = typeof card.taskSummary === 'object' ? card.taskSummary?.dueTask : null
+  const dueState = getDueState(dueTask?.deadline)
   const [, dropRef] = useDrop({
     accept: cardType,
     hover: (draggedCard, monitor) => {
@@ -132,6 +163,12 @@ export function BoardCard({
           <ListChecks size={14} />
           {card.taskCount || 0} {(card.taskCount || 0) === 1 ? 'task' : 'tasks'} remain
         </span>
+        {dueTask && dueState ? (
+          <span className={`card-due-badge ${dueState.className}`} title={dueTask.title}>
+            <CalendarDays size={14} />
+            {dueState.label}
+          </span>
+        ) : null}
       </div>
       <div className="card-actions" onClick={handleActionClick} onKeyDown={handleActionClick}>
         <IconButton label="Edit task card" onClick={() => onEdit(card)}>

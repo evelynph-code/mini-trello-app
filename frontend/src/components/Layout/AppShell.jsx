@@ -10,6 +10,7 @@ export function AppShell({
   activePage,
   notifications = [],
   onNavigate,
+  onNotificationOpen,
   onNotificationRead,
   onRespondToInvitation,
   onToggleAuth,
@@ -123,11 +124,26 @@ export function AppShell({
                               Decline
                             </button>
                           </div>
-                        ) : notification.type !== 'task-due-soon' ? (
-                          <button type="button" onClick={() => onNotificationRead(notification.id)}>
-                            Mark read
-                          </button>
-                        ) : null}
+                        ) : (
+                          <div className="notification-actions">
+                            {notification.boardId ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsNotificationsOpen(false)
+                                  onNotificationOpen(notification)
+                                }}
+                              >
+                                Open
+                              </button>
+                            ) : null}
+                            {notification.type !== 'task-due-soon' ? (
+                              <button type="button" onClick={() => onNotificationRead(notification.id)}>
+                                Mark read
+                              </button>
+                            ) : null}
+                          </div>
+                        )}
                       </article>
                     ))
                   )}

@@ -56,15 +56,15 @@ const getBoardCard = async (req, res, next) => {
   }
 }
 
-const getBoardCardTaskCounts = async (req, res, next) => {
+const getBoardCardTaskSummaries = async (req, res, next) => {
   try {
-    const taskCounts = await cardService.getTaskCountsForBoard(req.params.boardId, req.user.id)
+    const taskSummaries = await cardService.getTaskSummariesForBoard(req.params.boardId, req.user.id)
 
-    if (!taskCounts) {
+    if (!taskSummaries) {
       return res.status(404).json({ error: 'Board not found.' })
     }
 
-    return res.json({ data: taskCounts })
+    return res.json({ data: taskSummaries })
   } catch (err) {
     return next(err)
   }
@@ -239,7 +239,7 @@ module.exports = {
   createBoardCard,
   deleteBoardCard,
   getBoardCard,
-  getBoardCardTaskCounts,
+  getBoardCardTaskSummaries,
   getBoardCards,
   getCardsForUser,
   updateBoardCardOrder,

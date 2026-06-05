@@ -133,7 +133,12 @@ export function ListColumn({
           </div>
         </div>
       )}
-      {cards.length === 0 ? <p className="empty-list-copy">Drop cards here</p> : null}
+      {cards.length === 0 ? (
+        <div className="empty-list-copy rich-empty-state">
+          <strong>No cards</strong>
+          <span>Drop one here or add a new card below.</span>
+        </div>
+      ) : null}
       {cards.map((card, cardIndex) => (
         <BoardCard
           key={card.id}
