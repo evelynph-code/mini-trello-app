@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { CommentActivityPanel } from '../Tasks/CommentActivityPanel'
 import { TaskBoard } from '../Tasks/TaskBoard'
 import { IconButton } from './IconButton'
-import { getListName } from './cardUtils'
+import { getListName } from '../../utils/cardUtils'
 
 export function CardDetailsDialog({
   card,

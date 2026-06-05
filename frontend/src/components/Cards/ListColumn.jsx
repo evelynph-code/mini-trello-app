@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
 import { GripVertical, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { useDrag, useDrop } from 'react-dnd'
+import { cardType, listType, normalizeListId } from '../../utils/cardUtils'
 import { BoardCard } from './BoardCard'
 import { IconButton } from './IconButton'
-import { cardType, listType, normalizeListId } from './cardUtils'
 
 export function ListColumn({
   cards,

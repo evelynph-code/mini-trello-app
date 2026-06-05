@@ -1,0 +1,351 @@
+.assigned-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.assigned-list article {
+  display: grid;
+  gap: 5px;
+  min-height: 76px;
+  border: 1px solid #d8e8f8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 10px;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.assigned-list article:hover {
+  border-color: #9bc6eb;
+  box-shadow: 0 10px 24px rgba(6, 22, 44, 0.1);
+  transform: translateY(-1px);
+}
+
+.board-task-list-name {
+  color: #0f6fad;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.assigned-list strong {
+  color: var(--text-strong);
+  font-size: 14px;
+}
+
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+}
+
+.panel-heading span {
+  border-radius: 999px;
+  background: #e6f5ff;
+  color: #0f6fad;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 8px;
+}
+
+.board-workspace {
+  display: grid;
+  gap: 16px;
+  min-height: calc(100svh - 190px);
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 20px 56px rgba(6, 22, 44, 0.16);
+  backdrop-filter: blur(12px);
+  padding: 18px;
+  animation: board-section-in 0.28s ease both;
+}
+
+.board-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.board-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.list-create-form {
+  display: flex;
+  gap: 8px;
+}
+
+.list-create-form input {
+  width: min(180px, 42vw);
+}
+
+.board-header h2 {
+  margin: 4px 0 6px;
+}
+
+.board-header p {
+  color: var(--text-muted);
+}
+
+.card-form {
+  display: grid;
+  gap: 8px;
+}
+
+.card-composer-panel {
+  grid-template-columns: minmax(220px, 1fr) minmax(160px, 0.5fr) minmax(150px, 0.45fr);
+  align-items: start;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f7fbff;
+  padding: 12px;
+}
+
+.card-composer-panel textarea,
+.card-composer-panel .form-actions {
+  grid-column: 1 / -1;
+}
+
+.form-actions,
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.card-listing {
+  grid-template-columns: 1fr;
+}
+
+.list-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  overflow-x: auto;
+  min-height: 420px;
+}
+
+.list-column {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid #c9deef;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #eef7ff 0%, #e8f1f9 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  padding: 10px;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.list-column.is-over {
+  border-color: #2f8cff;
+  background: #e7f4ff;
+  box-shadow: 0 14px 34px rgba(6, 22, 44, 0.14);
+  transform: translateY(-1px);
+}
+
+.empty-list-copy {
+  border: 1px dashed #c4d0dd;
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  margin: 0;
+  padding: 10px;
+  text-align: center;
+}
+
+.empty-board-state {
+  display: grid;
+  place-items: center;
+  min-height: 360px;
+  border: 1px dashed #9bc6eb;
+  border-radius: 8px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 24px;
+}
+
+.compact-empty-state {
+  min-height: 120px;
+  margin-bottom: 10px;
+}
+
+.rich-empty-state {
+  display: grid;
+  gap: 4px;
+  place-items: center;
+}
+
+.rich-empty-state strong {
+  color: var(--text-strong);
+  font-size: 13px;
+}
+
+.rich-empty-state span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.list-column h3 {
+  font-size: 15px;
+  margin: 0;
+  line-height: 28px;
+}
+
+.list-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 34px;
+}
+
+.list-title-row h3 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.list-title-main {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.list-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  border-color: transparent;
+  background: transparent;
+  color: #6b86a1;
+  padding: 0;
+  cursor: grab;
+}
+
+.list-drag-handle:active {
+  cursor: grabbing;
+}
+
+.list-title-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 4px;
+}
+
+.list-title-form input {
+  width: 100%;
+  min-height: 34px;
+}
+
+.list-card-form {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #d8e8f8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 8px;
+}
+
+.list-card-form input {
+  width: 100%;
+}
+
+.list-add-card-button {
+  width: 100%;
+  border-style: dashed;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text-muted);
+}
+
+.card-listing article p {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+.card-listing article strong {
+  line-height: 1.25;
+}
+
+.board-task-card {
+  display: grid;
+  gap: 7px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  background: #ffffff;
+  box-shadow: 0 6px 16px rgba(6, 22, 44, 0.07);
+  cursor: grab;
+  animation: board-card-in 0.22s ease both;
+}
+
+.board-task-card:hover,
+.board-task-card.is-open {
+  border-color: #8bc5ff;
+  box-shadow: 0 10px 26px rgba(6, 22, 44, 0.13);
+  transform: translateY(-1px);
+}
+
+.board-task-card:active {
+  cursor: grabbing;
+}
+
+.board-task-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+  padding-top: 1px;
+}
+
+.board-task-list-name {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-due-badge,
+.task-count-badge {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 1 auto;
+  gap: 4px;
+  min-height: 22px;
+  max-width: 100%;
+  border-radius: 999px;
+  background: #e6f5ff;
+  color: #0f6fad;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 7px;
+  white-space: normal;
+}
+
+.card-due-badge {
+  background: #f1f5f9;
+  color: #64748b;
+}

@@ -1,8 +1,8 @@
 import { useRef } from 'react'
 import { CalendarDays, ListChecks, Pencil, Trash2 } from 'lucide-react'
 import { useDrag, useDrop } from 'react-dnd'
+import { cardType, getListName } from '../../utils/cardUtils'
 import { IconButton } from './IconButton'
-import { cardType, getListName } from './cardUtils'
 
 const getDueState = (deadline) => {
   if (!deadline) {

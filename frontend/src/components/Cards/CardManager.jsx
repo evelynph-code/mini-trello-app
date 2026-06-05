@@ -1,8 +1,8 @@
 import { Plus } from 'lucide-react'
+import { useCardManager } from '../../hooks/useCardManager'
+import { normalizeListId } from '../../utils/cardUtils'
 import { CardDetailsDialog, EditCardDialog } from './CardDialogs'
 import { ListColumn } from './ListColumn'
-import { normalizeListId } from './cardUtils'
-import { useCardManager } from './useCardManager'
 
 export function CardManager({
   currentUser,
