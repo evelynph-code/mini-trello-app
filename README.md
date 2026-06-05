@@ -11,14 +11,16 @@ trello-app/
 │   │   ├── assets/           # Static frontend assets
 │   │   ├── components/       # Reusable React components
 │   │   │   ├── Boards/       # Board switcher and board access UI
-│   │   │   ├── Cards/        # Board card, list, and card dialogs
+│   │   │   ├── Cards/        # Card/list UI components and dialogs
 │   │   │   ├── Layout/       # App shell/navigation
 │   │   │   ├── Tasks/        # Task board, comments, activity panels
 │   │   │   └── Users/        # User settings UI
+│   │   ├── hooks/            # React state managers for cards, lists, and task summaries
 │   │   ├── pages/            # Page-level screens
 │   │   ├── services/         # API and realtime client helpers
 │   │   ├── styles/           # Feature CSS files
-│   │   └── utils/            # Shared frontend helpers
+│   │   │   └── board/        # Split board styles: manager, workspace, tasks, dialogs
+│   │   └── utils/            # Pure frontend helpers for board/card/task data
 │   └── package.json
 ├── backend/                  # Express API
 │   ├── src/
@@ -34,6 +36,28 @@ trello-app/
 ├── package.json              # Root scripts for frontend/backend commands
 └── README.md
 ```
+
+### Frontend Organization
+
+- `frontend/src/pages/` contains route-level screens such as the board page, landing page, and settings page.
+- `frontend/src/components/Boards/` owns board selection, creation, access, rename, delete, and leave-board UI.
+- `frontend/src/components/Cards/` owns presentational card/list pieces such as `CardManager`, `BoardCard`, `ListColumn`, and card dialogs.
+- `frontend/src/components/Tasks/` owns task boards, task comments, activity history, reviewer flow UI, and related panels.
+- `frontend/src/hooks/useCardManager.js` coordinates card loading, card CRUD, drag ordering, realtime updates, and notification click-through focus.
+- `frontend/src/hooks/useListManager.js` handles list create, rename, delete, and reorder behavior.
+- `frontend/src/hooks/useCardTaskSummaries.js` handles task summary counts and due-date badge data for cards.
+- `frontend/src/services/` wraps backend API calls and Socket.IO setup.
+- `frontend/src/utils/` contains pure helpers such as card normalization, board helpers, and task summary formatting.
+- `frontend/src/styles/board.css` imports the smaller board style modules in `frontend/src/styles/board/`.
+
+### Backend Organization
+
+- `backend/src/routes/` maps API endpoints to controllers.
+- `backend/src/controllers/` validates request input and sends HTTP responses.
+- `backend/src/services/` contains business rules such as board access, default-board behavior, invitations, notifications, tasks, and card activity.
+- `backend/src/repositories/` contains Firestore reads/writes.
+- `backend/src/realtime/socket.js` manages Socket.IO board rooms and board-change broadcasts.
+- `backend/src/middleware/` contains auth, verified-email, not-found, and error handling middleware.
 
 ## Requirements
 
