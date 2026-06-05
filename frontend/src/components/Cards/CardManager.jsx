@@ -6,6 +6,7 @@ import { useCardManager } from './useCardManager'
 
 export function CardManager({
   currentUser,
+  focusTarget,
   isAuthenticated,
   onBoardsChange,
   selectedBoard,
@@ -39,7 +40,7 @@ export function CardManager({
     setDetailsCard,
     setEditingListId,
     setListForm,
-  } = useCardManager({ isAuthenticated, onBoardsChange, selectedBoard })
+  } = useCardManager({ focusTarget, isAuthenticated, onBoardsChange, selectedBoard })
 
   return (
     <section className="board-workspace" aria-labelledby="assigned-title">
@@ -81,7 +82,12 @@ export function CardManager({
           {error ? <p className="inline-error">{error}</p> : null}
           <div className="assigned-list card-listing" aria-live="polite">
             {isLoading ? <p>Loading cards...</p> : null}
-            {!isLoading && cards.length === 0 ? <p>No assignments in this board yet.</p> : null}
+            {!isLoading && cards.length === 0 ? (
+              <div className="empty-board-state compact-empty-state">
+                <h3>No cards yet</h3>
+                <p>Add your first task card from any list below.</p>
+              </div>
+            ) : null}
             <div className="list-board">
               {selectedBoard.lists.map((list, index) => (
                 <ListColumn

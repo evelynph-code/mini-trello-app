@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   applyListPositions,
   createListId,
@@ -11,14 +11,50 @@ import { boardsApi } from '../../services/boardsApi'
 import { cardApi } from '../../services/cardApi'
 import { socket } from '../../services/realtime'
 
-const countRemainingTasks = (tasks) => tasks.filter((task) => task.status !== 'done').length
+const summarizeTasks = (tasks) => {
+  const activeTasks = tasks.filter((task) => task.status !== 'done')
+  const dueTasks = activeTasks
+    .filter((task) => task.deadline)
+    .sort((firstTask, secondTask) => firstTask.deadline.localeCompare(secondTask.deadline))
+
+  return {
+    dueTask: dueTasks[0]
+      ? {
+          deadline: dueTasks[0].deadline,
+          id: dueTasks[0].id,
+          status: dueTasks[0].status,
+          title: dueTasks[0].title,
+        }
+      : null,
+    remainingCount: activeTasks.length,
+  }
+}
+
+const normalizeTaskSummary = (summary) => {
+  if (typeof summary === 'number') {
+    return { dueTask: null, remainingCount: summary }
+  }
+
+  return {
+    dueTask: summary?.dueTask || null,
+    remainingCount: summary?.remainingCount || 0,
+  }
+}
+
+const normalizeTaskSummaries = (summaries) =>
+  Object.fromEntries(
+    Object.entries(summaries || {}).map(([cardId, summary]) => [
+      cardId,
+      normalizeTaskSummary(summary),
+    ]),
+  )
 
 const cardOrderSignature = (cards) =>
   cards
     .map((card) => `${card.id}:${normalizeListId(card.listId)}:${Number.isFinite(card.position) ? card.position : 0}`)
     .join('|')
 
-export function useCardManager({ isAuthenticated, onBoardsChange, selectedBoard }) {
+export function useCardManager({ focusTarget, isAuthenticated, onBoardsChange, selectedBoard }) {
   const [cards, setCards] = useState([])
   const [detailsCard, setDetailsCard] = useState(null)
   const [error, setError] = useState('')
@@ -28,9 +64,10 @@ export function useCardManager({ isAuthenticated, onBoardsChange, selectedBoard 
   const [editingListId, setEditingListId] = useState('')
   const [listForm, setListForm] = useState({ name: '' })
   const [selectedCardId, setSelectedCardId] = useState('')
-  const [taskCounts, setTaskCounts] = useState({})
+  const [taskSummaries, setTaskSummaries] = useState({})
   const cardsRef = useRef([])
   const hasCardOrderChangedRef = useRef(false)
+  const appliedFocusTargetRef = useRef(0)
   const isCardOrderActiveRef = useRef(false)
   const listsRef = useRef([])
   const queuedRemoteCardsRef = useRef(null)
@@ -38,7 +75,8 @@ export function useCardManager({ isAuthenticated, onBoardsChange, selectedBoard 
   const orderedCards = sortCardsByPosition(
     cards.map((card) => ({
       ...card,
-      taskCount: taskCounts[card.id] || 0,
+      taskCount: taskSummaries[card.id]?.remainingCount || 0,
+      taskSummary: taskSummaries[card.id] || null,
     })),
   )
 
@@ -83,11 +121,13 @@ export function useCardManager({ isAuthenticated, onBoardsChange, selectedBoard 
     }
 
     try {
-      const nextTaskCounts = await cardApi.getBoardCardTaskCounts(selectedBoard.id)
+      const nextTaskSummaries = normalizeTaskSummaries(
+        await cardApi.getBoardCardTaskSummaries(selectedBoard.id),
+      )
 
-      setTaskCounts((currentCounts) => ({
-        ...currentCounts,
-        [cardId]: nextTaskCounts[cardId] || 0,
+      setTaskSummaries((currentSummaries) => ({
+        ...currentSummaries,
+        [cardId]: nextTaskSummaries[cardId] || { dueTask: null, remainingCount: 0 },
       }))
     } catch (err) {
       setError(err.message)
@@ -96,12 +136,12 @@ export function useCardManager({ isAuthenticated, onBoardsChange, selectedBoard 
 
   const refreshTaskCounts = async (boardId) => {
     if (!boardId) {
-      setTaskCounts({})
+      setTaskSummaries({})
       return
     }
 
     try {
-      setTaskCounts(await cardApi.getBoardCardTaskCounts(boardId))
+      setTaskSummaries(normalizeTaskSummaries(await cardApi.getBoardCardTaskSummaries(boardId)))
     } catch (err) {
       setError(err.message)
     }
@@ -111,7 +151,7 @@ export function useCardManager({ isAuthenticated, onBoardsChange, selectedBoard 
     if (!isAuthenticated || !selectedBoard) {
       setCards([])
       setDetailsCard(null)
-      setTaskCounts({})
+      setTaskSummaries({})
       return
     }
 
@@ -141,7 +181,7 @@ export function useCardManager({ isAuthenticated, onBoardsChange, selectedBoard 
       if (!isAuthenticated || !selectedBoard) {
         setCards([])
         setDetailsCard(null)
-        setTaskCounts({})
+        setTaskSummaries({})
         return
       }
 
@@ -193,9 +233,9 @@ export function useCardManager({ isAuthenticated, onBoardsChange, selectedBoard 
       }
 
       if (payload.resource === 'tasks' && payload.cardId && payload.tasks) {
-        setTaskCounts((currentCounts) => ({
-          ...currentCounts,
-          [payload.cardId]: countRemainingTasks(payload.tasks),
+        setTaskSummaries((currentSummaries) => ({
+          ...currentSummaries,
+          [payload.cardId]: summarizeTasks(payload.tasks),
         }))
       }
     }
@@ -240,14 +280,18 @@ export function useCardManager({ isAuthenticated, onBoardsChange, selectedBoard 
     }
   }
 
-  const handleShowDetails = async (cardId) => {
+  const handleShowDetails = useCallback(async (cardId) => {
+    if (!selectedBoard?.id) {
+      return
+    }
+
     try {
       setSelectedCardId(cardId)
       setDetailsCard(await cardApi.getBoardCard(selectedBoard.id, cardId))
     } catch (err) {
       setError(err.message)
     }
-  }
+  }, [selectedBoard])
 
   const handleToggleDetails = (cardId) => {
     if (detailsCard?.id === cardId) {
@@ -257,6 +301,29 @@ export function useCardManager({ isAuthenticated, onBoardsChange, selectedBoard 
 
     handleShowDetails(cardId)
   }
+
+  useEffect(() => {
+    if (
+      !focusTarget?.cardId ||
+      focusTarget.boardId !== selectedBoard?.id ||
+      appliedFocusTargetRef.current === focusTarget.openedAt
+    ) {
+      return undefined
+    }
+
+    let isMounted = true
+
+    Promise.resolve().then(() => {
+      if (isMounted) {
+        appliedFocusTargetRef.current = focusTarget.openedAt
+        handleShowDetails(focusTarget.cardId)
+      }
+    })
+
+    return () => {
+      isMounted = false
+    }
+  }, [focusTarget, handleShowDetails, selectedBoard])
 
   const handleEdit = (card) => {
     setForm({

@@ -1,5 +1,5 @@
 import { MessageSquare, Send } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { cardDetailsApi } from '../../services/cardDetailsApi'
 import { socket } from '../../services/realtime'
 
@@ -11,8 +11,17 @@ const formatEntryTime = (createdAt) =>
     month: 'short',
   }).format(new Date(createdAt || Date.now()))
 
+const activityFilters = [
+  { id: 'all', label: 'All', matches: () => true },
+  { id: 'tasks', label: 'Tasks', matches: (entry) => entry.type?.startsWith('task-') },
+  { id: 'status', label: 'Status', matches: (entry) => entry.type === 'task-completed' },
+  { id: 'reviews', label: 'Reviews', matches: (entry) => entry.type === 'task-review-requested' },
+  { id: 'comments', label: 'Comments', matches: (entry) => entry.type === 'comment' },
+]
+
 export function CommentActivityPanel({ boardId, cardId }) {
   const [activities, setActivities] = useState([])
+  const [activityFilter, setActivityFilter] = useState('all')
   const [comment, setComment] = useState('')
   const [comments, setComments] = useState([])
   const [error, setError] = useState('')
@@ -22,6 +31,19 @@ export function CommentActivityPanel({ boardId, cardId }) {
     setActivities(details.activities || [])
     setComments(details.comments || [])
   }
+
+  const activityFilterCounts = useMemo(
+    () =>
+      Object.fromEntries(
+        activityFilters.map((filter) => [
+          filter.id,
+          activities.filter((entry) => filter.matches(entry)).length,
+        ]),
+      ),
+    [activities],
+  )
+  const activeFilter = activityFilters.find((filter) => filter.id === activityFilter) || activityFilters[0]
+  const filteredActivities = activities.filter((entry) => activeFilter.matches(entry))
 
   useEffect(() => {
     let isMounted = true
@@ -113,7 +135,12 @@ export function CommentActivityPanel({ boardId, cardId }) {
       <div className="comment-activity-grid">
         <section className="comments-list" aria-label="Comments">
           <h4>Comments</h4>
-          {comments.length === 0 ? <p className="empty-list-copy">No comments yet.</p> : null}
+          {comments.length === 0 ? (
+            <div className="empty-list-copy rich-empty-state">
+              <strong>No comments yet</strong>
+              <span>Start the discussion with a question, decision, or quick update.</span>
+            </div>
+          ) : null}
           {comments.map((entry) => (
             <article key={entry.id} className="comment-entry">
               <div>
@@ -128,9 +155,33 @@ export function CommentActivityPanel({ boardId, cardId }) {
         </section>
 
         <section className="activity-list" aria-label="Activity">
-          <h4>Activity</h4>
-          {activities.length === 0 ? <p className="empty-list-copy">No activity yet.</p> : null}
-          {activities.map((entry) => (
+          <div className="activity-header">
+            <h4>Activity</h4>
+            <div className="activity-filter-tabs" aria-label="Filter activity">
+              {activityFilters.map((filter) => (
+                <button
+                  key={filter.id}
+                  type="button"
+                  className={activityFilter === filter.id ? 'active' : ''}
+                  onClick={() => setActivityFilter(filter.id)}
+                >
+                  {filter.label}
+                  <span>{activityFilterCounts[filter.id] || 0}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          {filteredActivities.length === 0 ? (
+            <div className="empty-list-copy rich-empty-state">
+              <strong>{activities.length === 0 ? 'No activity yet' : 'Nothing in this filter'}</strong>
+              <span>
+                {activities.length === 0
+                  ? 'Changes to tasks and comments will appear here.'
+                  : 'Try another filter to see more updates.'}
+              </span>
+            </div>
+          ) : null}
+          {filteredActivities.map((entry) => (
             <article key={entry.id} className="activity-entry">
               <MessageSquare size={14} />
               <div>

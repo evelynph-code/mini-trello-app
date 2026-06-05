@@ -35,7 +35,7 @@ export const cardApi = {
     }),
   getBoardCard: (boardId, cardId) => request(`/boards/${boardId}/cards/${cardId}`),
   getBoardCards: (boardId) => request(`/boards/${boardId}/cards`),
-  getBoardCardTaskCounts: (boardId) => request(`/boards/${boardId}/cards/task-counts`),
+  getBoardCardTaskSummaries: (boardId) => request(`/boards/${boardId}/cards/task-counts`),
   getCards: () => request('/cards'),
   updateBoardCardOrder: (boardId, cards) =>
     request(`/boards/${boardId}/cards/order`, {

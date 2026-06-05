@@ -118,6 +118,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null)
   const [authError, setAuthError] = useState('')
   const [notifications, setNotifications] = useState([])
+  const [notificationTarget, setNotificationTarget] = useState(null)
   const [isAuthReady, setIsAuthReady] = useState(false)
   const isAuthenticated = Boolean(currentUser)
   const requiresEmailVerification =
@@ -212,6 +213,28 @@ function App() {
     }
   }
 
+  const handleNotificationOpen = async (notification) => {
+    if (!notification.boardId) {
+      return
+    }
+
+    setActivePage('dashboard')
+    setNotificationTarget({
+      boardId: notification.boardId,
+      cardId: notification.cardId || '',
+      taskId: notification.taskId || '',
+      openedAt: Date.now(),
+    })
+
+    if (notification.type !== 'task-due-soon') {
+      try {
+        await handleNotificationRead(notification.id)
+      } catch (err) {
+        setAuthError(err.message)
+      }
+    }
+  }
+
   const handleToggleAuth = async () => {
     if (!isAuthenticated) {
       window.location.href = authApi.getGitHubLoginUrl()
@@ -221,6 +244,7 @@ function App() {
     try {
       await authApi.logout()
       setNotifications([])
+      setNotificationTarget(null)
       await loadCurrentUser()
     } catch (err) {
       setAuthError(err.message)
@@ -231,6 +255,7 @@ function App() {
     try {
       await authApi.deleteAccount()
       setNotifications([])
+      setNotificationTarget(null)
       setCurrentUser(null)
       setActivePage('dashboard')
       setAuthError('')
@@ -251,6 +276,7 @@ function App() {
 
     setCurrentUser(user)
     setAuthError('')
+    setNotificationTarget(null)
     setActivePage('dashboard')
   }
 
@@ -266,6 +292,7 @@ function App() {
         onAuthSuccess={(user) => {
           setCurrentUser(user)
           setAuthError('')
+          setNotificationTarget(null)
           setActivePage('dashboard')
         }}
         onSignIn={() => {
@@ -297,6 +324,7 @@ function App() {
         activePage={activePage}
         notifications={notifications}
         onNavigate={setActivePage}
+        onNotificationOpen={handleNotificationOpen}
         onNotificationRead={handleNotificationRead}
         onRespondToInvitation={handleInvitationResponse}
         onToggleAuth={handleToggleAuth}
@@ -311,7 +339,11 @@ function App() {
             onUserChange={setCurrentUser}
           />
         ) : (
-          <BoardPage currentUser={currentUser} isAuthenticated={isAuthenticated} />
+          <BoardPage
+            currentUser={currentUser}
+            focusTarget={notificationTarget}
+            isAuthenticated={isAuthenticated}
+          />
         )}
       </AppShell>
     </DndProvider>
