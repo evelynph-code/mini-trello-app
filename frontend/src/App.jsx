@@ -343,6 +343,7 @@ function App() {
             currentUser={currentUser}
             focusTarget={notificationTarget}
             isAuthenticated={isAuthenticated}
+            onFocusTargetConsumed={() => setNotificationTarget(null)}
           />
         )}
       </AppShell>

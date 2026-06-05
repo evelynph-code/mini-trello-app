@@ -238,7 +238,7 @@ const notifyTaskCommentByIds = async ({ actor, boardId, cardId }) => {
 }
 
 const markNotificationRead = (notificationId, userId) =>
-  notificationRepository.markNotificationRead(notificationId, userId)
+  notificationRepository.deleteNotificationForUser(notificationId, userId)
 
 module.exports = {
   getNotifications,

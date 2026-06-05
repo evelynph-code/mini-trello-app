@@ -11,13 +11,16 @@ const respondToInvitation = async (invitationId, userId, status) => {
     return null
   }
 
-  const updatedInvitation = await invitationRepository.updateInvitationStatus(invitationId, status)
-
   if (status === 'accepted') {
     await boardRepository.addBoardMember(invitation.boardId, userId)
   }
 
-  return updatedInvitation
+  await invitationRepository.deleteInvitation(invitationId)
+
+  return {
+    ...invitation,
+    status,
+  }
 }
 
 module.exports = {

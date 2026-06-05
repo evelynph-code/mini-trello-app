@@ -2,7 +2,12 @@ import { useCallback, useEffect, useState } from 'react'
 import { BoardManager } from '../components/Boards/BoardManager'
 import { CardManager } from '../components/Cards/CardManager'
 
-export function BoardPage({ currentUser, focusTarget, isAuthenticated }) {
+export function BoardPage({
+  currentUser,
+  focusTarget,
+  isAuthenticated,
+  onFocusTargetConsumed,
+}) {
   const [boards, setBoards] = useState([])
   const [selectedBoardId, setSelectedBoardId] = useState('')
   const [appliedFocusTargetKey, setAppliedFocusTargetKey] = useState(0)
@@ -46,13 +51,17 @@ export function BoardPage({ currentUser, focusTarget, isAuthenticated }) {
       if (isMounted) {
         setAppliedFocusTargetKey(focusTargetKey)
         setSelectedBoardId(pendingFocusBoardId)
+
+        if (!focusTarget?.cardId) {
+          onFocusTargetConsumed?.()
+        }
       }
     })
 
     return () => {
       isMounted = false
     }
-  }, [boards, focusTargetKey, pendingFocusBoardId])
+  }, [boards, focusTarget?.cardId, focusTargetKey, onFocusTargetConsumed, pendingFocusBoardId])
 
   return (
     <main className="board-app">
@@ -67,6 +76,7 @@ export function BoardPage({ currentUser, focusTarget, isAuthenticated }) {
         currentUser={currentUser}
         focusTarget={focusTarget}
         isAuthenticated={isAuthenticated}
+        onFocusTargetConsumed={onFocusTargetConsumed}
         onBoardsChange={setBoards}
         selectedBoard={selectedBoard}
       />

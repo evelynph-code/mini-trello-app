@@ -54,10 +54,17 @@ const cardOrderSignature = (cards) =>
     .map((card) => `${card.id}:${normalizeListId(card.listId)}:${Number.isFinite(card.position) ? card.position : 0}`)
     .join('|')
 
-export function useCardManager({ focusTarget, isAuthenticated, onBoardsChange, selectedBoard }) {
+export function useCardManager({
+  focusTarget,
+  isAuthenticated,
+  onBoardsChange,
+  onFocusTargetConsumed,
+  selectedBoard,
+}) {
   const [cards, setCards] = useState([])
   const [detailsCard, setDetailsCard] = useState(null)
   const [error, setError] = useState('')
+  const [focusedTaskId, setFocusedTaskId] = useState('')
   const [form, setForm] = useState(emptyForm)
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -280,13 +287,14 @@ export function useCardManager({ focusTarget, isAuthenticated, onBoardsChange, s
     }
   }
 
-  const handleShowDetails = useCallback(async (cardId) => {
+  const handleShowDetails = useCallback(async (cardId, nextFocusedTaskId = '') => {
     if (!selectedBoard?.id) {
       return
     }
 
     try {
       setSelectedCardId(cardId)
+      setFocusedTaskId(nextFocusedTaskId)
       setDetailsCard(await cardApi.getBoardCard(selectedBoard.id, cardId))
     } catch (err) {
       setError(err.message)
@@ -316,14 +324,15 @@ export function useCardManager({ focusTarget, isAuthenticated, onBoardsChange, s
     Promise.resolve().then(() => {
       if (isMounted) {
         appliedFocusTargetRef.current = focusTarget.openedAt
-        handleShowDetails(focusTarget.cardId)
+        handleShowDetails(focusTarget.cardId, focusTarget.taskId || '')
+        onFocusTargetConsumed?.()
       }
     })
 
     return () => {
       isMounted = false
     }
-  }, [focusTarget, handleShowDetails, selectedBoard])
+  }, [focusTarget, handleShowDetails, onFocusTargetConsumed, selectedBoard])
 
   const handleEdit = (card) => {
     setForm({
@@ -573,6 +582,7 @@ export function useCardManager({ focusTarget, isAuthenticated, onBoardsChange, s
     detailsCard,
     editingListId,
     error,
+    focusedTaskId,
     form,
     handleChange,
     handleCreateCardInList,
