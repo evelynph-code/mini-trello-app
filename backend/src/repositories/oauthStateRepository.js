@@ -2,12 +2,13 @@ const { admin, getFirestore } = require('../config/firebase')
 
 const oauthStatesCollection = () => getFirestore().collection('oauthStates')
 
-const createState = async (state, maxAgeSeconds) => {
+const createState = async (state, maxAgeSeconds, data = {}) => {
   const now = admin.firestore.Timestamp.now()
 
   await oauthStatesCollection().doc(state).set({
     createdAt: now,
     expiresAt: admin.firestore.Timestamp.fromMillis(now.toMillis() + maxAgeSeconds * 1000),
+    redirectOrigin: data.redirectOrigin || '',
   })
 }
 
@@ -34,6 +35,7 @@ const consumeState = async (state) => {
 
   return {
     expiresAt,
+    redirectOrigin: data.redirectOrigin || '',
     state,
   }
 }

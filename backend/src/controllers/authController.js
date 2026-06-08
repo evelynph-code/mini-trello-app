@@ -1,6 +1,30 @@
-const { env } = require('../config/env')
+const { env, isAllowedClientOrigin } = require('../config/env')
 const authService = require('../services/authService')
 const userService = require('../services/userService')
+
+const getAuthRedirectOrigin = (req) => {
+  const origin = req.get('origin')
+
+  if (origin && isAllowedClientOrigin(origin)) {
+    return origin
+  }
+
+  const referrer = req.get('referer') || req.get('referrer')
+
+  if (referrer) {
+    try {
+      const referrerOrigin = new URL(referrer).origin
+
+      if (isAllowedClientOrigin(referrerOrigin)) {
+        return referrerOrigin
+      }
+    } catch {
+      return env.clientOrigin
+    }
+  }
+
+  return env.clientOrigin
+}
 
 const getCurrentUser = async (req, res, next) => {
   try {
@@ -152,11 +176,13 @@ const updateCurrentUser = async (req, res, next) => {
   }
 }
 
-const redirectToGitHub = async (_req, res, next) => {
+const redirectToGitHub = async (req, res, next) => {
   try {
     authService.assertGitHubOAuthConfigured()
 
-    const { stateCookie, url } = await authService.buildGitHubAuthorizeUrl()
+    const { stateCookie, url } = await authService.buildGitHubAuthorizeUrl(
+      getAuthRedirectOrigin(req),
+    )
 
     res.setHeader('Set-Cookie', stateCookie)
     return res.redirect(url)
@@ -169,8 +195,11 @@ const handleGitHubCallback = async (req, res, next) => {
   const { code, state } = req.query
 
   try {
-    if (!code || !(await authService.validateState(req, state))) {
-      return res.redirect(`${env.clientOrigin}/?auth=github_failed`)
+    const validatedState = await authService.validateState(req, state)
+    const redirectOrigin = validatedState?.redirectOrigin || env.clientOrigin
+
+    if (!code || !validatedState) {
+      return res.redirect(`${redirectOrigin}/?auth=github_failed`)
     }
 
     const accessToken = await authService.exchangeCodeForToken(code)
@@ -184,7 +213,7 @@ const handleGitHubCallback = async (req, res, next) => {
       authService.clearCookie(authService.cookieNames.state),
     ])
 
-    return res.redirect(`${env.clientOrigin}/?auth=github_success`)
+    return res.redirect(`${redirectOrigin}/?auth=github_success`)
   } catch (err) {
     return next(err)
   }

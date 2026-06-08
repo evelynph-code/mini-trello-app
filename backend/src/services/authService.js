@@ -87,7 +87,7 @@ const getCookie = (req, name) => {
   return cookie ? decodeURIComponent(cookie.split('=').slice(1).join('=')) : null
 }
 
-const buildGitHubAuthorizeUrl = async () => {
+const buildGitHubAuthorizeUrl = async (redirectOrigin = env.clientOrigin) => {
   const state = createRandomToken()
   const url = new URL('https://github.com/login/oauth/authorize')
 
@@ -96,7 +96,7 @@ const buildGitHubAuthorizeUrl = async () => {
   url.searchParams.set('scope', 'read:user user:email')
   url.searchParams.set('state', state)
 
-  await oauthStateRepository.createState(state, oauthStateMaxAgeSeconds)
+  await oauthStateRepository.createState(state, oauthStateMaxAgeSeconds, { redirectOrigin })
 
   return {
     stateCookie: createCookie(cookieNames.state, state, { maxAge: oauthStateMaxAgeSeconds }),
@@ -116,12 +116,14 @@ const validateState = async (req, receivedState) => {
   const storedState = getCookie(req, cookieNames.state)
   const consumedState = await oauthStateRepository.consumeState(receivedState)
 
-  return Boolean(
+  const isValid = Boolean(
     receivedState &&
       storedState &&
       storedState === receivedState &&
       consumedState,
   )
+
+  return isValid ? consumedState : null
 }
 
 const exchangeCodeForToken = async (code) => {
