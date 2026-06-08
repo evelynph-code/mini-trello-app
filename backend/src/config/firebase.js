@@ -1,4 +1,5 @@
 const path = require('path')
+const fs = require('fs')
 const admin = require('firebase-admin')
 const { env } = require('./env')
 
@@ -35,7 +36,17 @@ const initializeFirebase = () => {
   const serviceAccountPath = resolveServiceAccountPath()
 
   if (!serviceAccount && !serviceAccountPath) {
-    const error = new Error('Firebase service account is not configured.')
+    const error = new Error(
+      'Firebase service account is not configured. Set FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH.',
+    )
+    error.status = 500
+    throw error
+  }
+
+  if (!serviceAccount && !fs.existsSync(serviceAccountPath)) {
+    const error = new Error(
+      `Firebase service account file was not found at ${serviceAccountPath}. On Render, set FIREBASE_SERVICE_ACCOUNT_JSON instead of FIREBASE_SERVICE_ACCOUNT_PATH.`,
+    )
     error.status = 500
     throw error
   }
