@@ -71,7 +71,7 @@ export function LandingPage({ authError, isLoading, onAuthSuccess, onSignIn }) {
             Plan assignments, track tasks, leave comments, and keep every board moving
             with realtime updates.
           </p>
-          {authError ? <p className="landing-error">{authError}</p> : null}
+          {authError && <p className="landing-error">{authError}</p>}
           {localError ? <p className="landing-error">{localError}</p> : null}
           {verificationMessage ? <p className="landing-notice">{verificationMessage}</p> : null}
           <div className="landing-actions">
@@ -159,43 +159,8 @@ export function LandingPage({ authError, isLoading, onAuthSuccess, onSignIn }) {
         </div>
 
         <div className="landing-board-preview" aria-hidden="true">
-          <div className="preview-topbar">
-            <span />
-            <span />
-            <span />
-          </div>
           <div className="preview-board">
-            {[
-              {
-                cards: ['Review OAuth flow', 'Invite teammate'],
-                icon: Users,
-                title: 'Today',
-              },
-              {
-                cards: ['Polish card details', 'Add task comments'],
-                icon: MessageSquare,
-                title: 'This Week',
-              },
-              {
-                cards: ['Realtime activity', 'Done'],
-                icon: Kanban,
-                title: 'Launch',
-              },
-            ].map((list) => {
-              const Icon = list.icon
-
-              return (
-                <article key={list.title} className="preview-list">
-                  <div>
-                    <Icon size={15} />
-                    <strong>{list.title}</strong>
-                  </div>
-                  {list.cards.map((card) => (
-                    <p key={card}>{card}</p>
-                  ))}
-                </article>
-              )
-            })}
+            <PreviewList />
           </div>
           <div className="preview-status">
             <Lock size={14} />
@@ -205,4 +170,40 @@ export function LandingPage({ authError, isLoading, onAuthSuccess, onSignIn }) {
       </section>
     </main>
   )
+}
+
+function PreviewList() {
+  const render = [
+    {
+      cards: ['Review OAuth flow', 'Invite teammate'],
+      icon: Users,
+      title: 'Today',
+    },
+    {
+      cards: ['Polish card details', 'Add task comments'],
+      icon: MessageSquare,
+      title: 'This Week',
+    },
+    {
+      cards: ['Realtime activity', 'Done'],
+      icon: Kanban,
+      title: 'Launch',
+    },
+  ].map((list) => {
+    const Icon = list.icon
+
+    return (
+      <article key={list.title} className="preview-list">
+        <div>
+          <Icon size={15} />
+          <strong>{list.title}</strong>
+        </div>
+        {list.cards.map((card) => (
+          <p key={card}>{card}</p>
+        ))}
+      </article>
+    )
+  })
+
+  return render;
 }
