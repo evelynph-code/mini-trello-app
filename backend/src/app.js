@@ -1,6 +1,6 @@
 const cors = require('cors')
 const express = require('express')
-const { env } = require('./config/env')
+const { env, isAllowedClientOrigin } = require('./config/env')
 const { errorHandler } = require('./middleware/errorHandler')
 const { notFound } = require('./middleware/notFound')
 const authRoutes = require('./routes/authRoutes')
@@ -18,7 +18,9 @@ const app = express()
 app.use(
   cors({
     credentials: true,
-    origin: env.clientOrigins,
+    origin: (origin, callback) => {
+      callback(null, isAllowedClientOrigin(origin))
+    },
   }),
 )
 app.use(express.json())

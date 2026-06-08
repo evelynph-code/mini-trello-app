@@ -32,6 +32,15 @@ const readBooleanEnv = (name) => ['1', 'true', 'yes'].includes(readEnv(name).toL
 
 const clientOrigin = readEnv('CLIENT_ORIGIN', 'http://localhost:5173')
 const configuredClientOrigins = parseList(readEnv('CLIENT_ORIGINS'))
+const vercelPreviewOriginPattern = /^https:\/\/mini-trello-[a-z0-9-]+-evelynph-codes-projects\.vercel\.app$/i
+
+const isAllowedClientOrigin = (origin) => {
+  if (!origin) {
+    return true
+  }
+
+  return env.clientOrigins.includes(origin) || vercelPreviewOriginPattern.test(origin)
+}
 
 const env = {
   apiBaseUrl: readEnv('API_BASE_URL', 'http://localhost:4000'),
@@ -64,4 +73,4 @@ const env = {
   smtpUser: readEnv('SMTP_USER'),
 }
 
-module.exports = { env }
+module.exports = { env, isAllowedClientOrigin }
