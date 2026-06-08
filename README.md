@@ -144,6 +144,56 @@ If you need to point the frontend at a different API URL:
 VITE_API_BASE_URL=http://localhost:4000/api npm run dev
 ```
 
+## Deploying to Render and Vercel
+
+Deploy the backend as a Render Web Service from the `backend` directory:
+
+```bash
+npm install
+npm start
+```
+
+Render should provide `PORT` automatically. Set these backend environment variables in Render:
+
+```text
+NODE_ENV=production
+CLIENT_ORIGIN=https://your-vercel-app.vercel.app
+API_BASE_URL=https://your-render-service.onrender.com
+COOKIE_SAMESITE=None
+GITHUB_CLIENT_ID=your_github_oauth_client_id
+GITHUB_CLIENT_SECRET=your_github_oauth_client_secret
+GITHUB_OAUTH_CALLBACK_URL=https://your-render-service.onrender.com/api/auth/github/callback
+FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
+APP_NAME=Mini Trello
+APP_EMAIL_FROM="Mini Trello <no-reply@example.com>"
+SMTP_HOST=your_smtp_host
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=your_smtp_user
+SMTP_PASS=your_smtp_password
+```
+
+If you use multiple Vercel domains or preview deployments, set `CLIENT_ORIGINS` to a comma-separated list of allowed frontend origins.
+
+Deploy the frontend as a Vercel project from the `frontend` directory:
+
+```text
+Build Command: npm run build
+Output Directory: dist
+```
+
+Set this frontend environment variable in Vercel:
+
+```text
+VITE_API_BASE_URL=https://your-render-service.onrender.com/api
+```
+
+For GitHub OAuth, add this callback URL in the GitHub OAuth app:
+
+```text
+https://your-render-service.onrender.com/api/auth/github/callback
+```
+
 ## Useful Commands
 
 From the project root:

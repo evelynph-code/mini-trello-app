@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { LogOut, MailCheck, Send } from 'lucide-react'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { AppShell } from './components/Layout/AppShell'
 import { BoardPage } from './pages/BoardPage'
 import { LandingPage } from './pages/LandingPage'
@@ -114,15 +115,21 @@ function EmailVerificationGate({ authError, currentUser, onResend, onSignOut, on
 }
 
 function App() {
-  const [activePage, setActivePage] = useState('dashboard')
+  const location = useLocation()
+  const navigate = useNavigate()
   const [currentUser, setCurrentUser] = useState(null)
   const [authError, setAuthError] = useState('')
   const [notifications, setNotifications] = useState([])
   const [notificationTarget, setNotificationTarget] = useState(null)
   const [isAuthReady, setIsAuthReady] = useState(false)
   const isAuthenticated = Boolean(currentUser)
+  const activePage = location.pathname === '/settings' ? 'settings' : 'dashboard'
   const requiresEmailVerification =
     currentUser?.provider === 'local' && !currentUser.emailVerified
+
+  const handleNavigate = (page) => {
+    navigate(page === 'settings' ? '/settings' : '/')
+  }
 
   const loadCurrentUser = async () => {
     setAuthError('')
@@ -218,7 +225,7 @@ function App() {
       return
     }
 
-    setActivePage('dashboard')
+    navigate('/')
     setNotificationTarget({
       boardId: notification.boardId,
       cardId: notification.cardId || '',
@@ -257,7 +264,7 @@ function App() {
       setNotifications([])
       setNotificationTarget(null)
       setCurrentUser(null)
-      setActivePage('dashboard')
+      navigate('/')
       setAuthError('')
     } catch (err) {
       setAuthError(err.message)
@@ -277,7 +284,7 @@ function App() {
     setCurrentUser(user)
     setAuthError('')
     setNotificationTarget(null)
-    setActivePage('dashboard')
+    navigate('/')
   }
 
   if (!isAuthReady) {
@@ -293,7 +300,7 @@ function App() {
           setCurrentUser(user)
           setAuthError('')
           setNotificationTarget(null)
-          setActivePage('dashboard')
+          navigate('/')
         }}
         onSignIn={() => {
           window.location.href = authApi.getGitHubLoginUrl()
@@ -323,13 +330,13 @@ function App() {
         isSignInDisabled={false}
         activePage={activePage}
         notifications={notifications}
-        onNavigate={setActivePage}
+        onNavigate={handleNavigate}
         onNotificationOpen={handleNotificationOpen}
         onNotificationRead={handleNotificationRead}
         onRespondToInvitation={handleInvitationResponse}
         onToggleAuth={handleToggleAuth}
       >
-        {activePage === 'settings' ? (
+        {location.pathname === '/settings' ? (
           <SettingsPage
             currentUser={currentUser}
             isAuthenticated={isAuthenticated}
@@ -338,13 +345,15 @@ function App() {
             onSignOut={handleToggleAuth}
             onUserChange={setCurrentUser}
           />
-        ) : (
+        ) : location.pathname === '/' ? (
           <BoardPage
             currentUser={currentUser}
             focusTarget={notificationTarget}
             isAuthenticated={isAuthenticated}
             onFocusTargetConsumed={() => setNotificationTarget(null)}
           />
+        ) : (
+          <Navigate to="/" replace />
         )}
       </AppShell>
     </DndProvider>

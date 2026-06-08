@@ -5,7 +5,14 @@ require('dotenv').config({
   quiet: true,
 })
 
+const parseList = (value) =>
+  String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+
 const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
+const configuredClientOrigins = parseList(process.env.CLIENT_ORIGINS)
 
 const env = {
   apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:4000',
@@ -15,11 +22,14 @@ const env = {
   clientOrigins: [
     ...new Set([
       clientOrigin,
+      ...configuredClientOrigins,
       'http://localhost:5173',
       'http://localhost:5174',
       'http://localhost:5175',
     ]),
   ],
+  cookieSameSite: process.env.COOKIE_SAMESITE || 'Lax',
+  firebaseServiceAccountJson: process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '',
   firebaseServiceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH || '',
   githubClientId: process.env.GITHUB_CLIENT_ID || '',
   githubClientSecret: process.env.GITHUB_CLIENT_SECRET || '',

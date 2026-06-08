@@ -12,23 +12,36 @@ const resolveServiceAccountPath = () => {
     : path.resolve(__dirname, '../../', env.firebaseServiceAccountPath)
 }
 
+const parseServiceAccountJson = () => {
+  if (!env.firebaseServiceAccountJson) {
+    return null
+  }
+
+  const serviceAccount = JSON.parse(env.firebaseServiceAccountJson)
+
+  if (typeof serviceAccount.private_key === 'string') {
+    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n')
+  }
+
+  return serviceAccount
+}
+
 const initializeFirebase = () => {
   if (admin.apps.length) {
     return admin.app()
   }
 
+  const serviceAccount = parseServiceAccountJson()
   const serviceAccountPath = resolveServiceAccountPath()
 
-  if (!serviceAccountPath) {
-    const error = new Error('Firebase service account path is not configured.')
+  if (!serviceAccount && !serviceAccountPath) {
+    const error = new Error('Firebase service account is not configured.')
     error.status = 500
     throw error
   }
 
-  const serviceAccount = require(serviceAccountPath)
-
   return admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+    credential: admin.credential.cert(serviceAccount || require(serviceAccountPath)),
   })
 }
 

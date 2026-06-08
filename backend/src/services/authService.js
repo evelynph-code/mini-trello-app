@@ -18,6 +18,23 @@ const cookieNames = {
   state: 'mini_trello_oauth_state',
 }
 
+const getCookieAttributes = (options = {}) => {
+  const sameSite = env.cookieSameSite
+  const shouldSecure = env.nodeEnv === 'production' || sameSite.toLowerCase() === 'none'
+  const parts = [
+    'HttpOnly',
+    'Path=/',
+    `SameSite=${sameSite}`,
+    `Max-Age=${options.maxAge ?? sessionMaxAgeSeconds}`,
+  ]
+
+  if (shouldSecure) {
+    parts.push('Secure')
+  }
+
+  return parts
+}
+
 const createRandomToken = () => crypto.randomBytes(24).toString('hex')
 
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex')
@@ -54,23 +71,14 @@ const verifyPassword = async (password, salt, expectedHash) => {
 }
 
 const createCookie = (name, value, options = {}) => {
-  const parts = [
+  return [
     `${name}=${value}`,
-    'HttpOnly',
-    'Path=/',
-    'SameSite=Lax',
-    `Max-Age=${options.maxAge || sessionMaxAgeSeconds}`,
-  ]
-
-  if (env.nodeEnv === 'production') {
-    parts.push('Secure')
-  }
-
-  return parts.join('; ')
+    ...getCookieAttributes(options),
+  ].join('; ')
 }
 
 const clearCookie = (name) =>
-  `${name}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0`
+  `${name}=; ${getCookieAttributes({ maxAge: 0 }).join('; ')}`
 
 const getCookie = (req, name) => {
   const cookies = req.headers.cookie?.split('; ') || []
