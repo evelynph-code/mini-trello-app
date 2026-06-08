@@ -11,13 +11,32 @@ const parseList = (value) =>
     .map((item) => item.trim())
     .filter(Boolean)
 
-const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
-const configuredClientOrigins = parseList(process.env.CLIENT_ORIGINS)
+const readEnv = (name, fallback = '') => {
+  const rawValue = process.env[name]
+
+  if (rawValue === undefined) {
+    return fallback
+  }
+
+  const value = rawValue.trim()
+  const quote = value[0]
+
+  if ((quote === '"' || quote === "'") && value.at(-1) === quote) {
+    return value.slice(1, -1)
+  }
+
+  return value
+}
+
+const readBooleanEnv = (name) => ['1', 'true', 'yes'].includes(readEnv(name).toLowerCase())
+
+const clientOrigin = readEnv('CLIENT_ORIGIN', 'http://localhost:5173')
+const configuredClientOrigins = parseList(readEnv('CLIENT_ORIGINS'))
 
 const env = {
-  apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:4000',
-  appEmailFrom: process.env.APP_EMAIL_FROM || 'Mini Trello <no-reply@mini-trello.local>',
-  appName: process.env.APP_NAME || 'Mini Trello',
+  apiBaseUrl: readEnv('API_BASE_URL', 'http://localhost:4000'),
+  appEmailFrom: readEnv('APP_EMAIL_FROM', 'Mini Trello <no-reply@mini-trello.local>'),
+  appName: readEnv('APP_NAME', 'Mini Trello'),
   clientOrigin,
   clientOrigins: [
     ...new Set([
@@ -28,21 +47,21 @@ const env = {
       'http://localhost:5175',
     ]),
   ],
-  cookieSameSite: process.env.COOKIE_SAMESITE || 'Lax',
-  firebaseServiceAccountJson: process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '',
-  firebaseServiceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH || '',
-  githubClientId: process.env.GITHUB_CLIENT_ID || '',
-  githubClientSecret: process.env.GITHUB_CLIENT_SECRET || '',
+  cookieSameSite: readEnv('COOKIE_SAMESITE', 'Lax'),
+  firebaseServiceAccountJson: readEnv('FIREBASE_SERVICE_ACCOUNT_JSON'),
+  firebaseServiceAccountPath: readEnv('FIREBASE_SERVICE_ACCOUNT_PATH'),
+  githubClientId: readEnv('GITHUB_CLIENT_ID'),
+  githubClientSecret: readEnv('GITHUB_CLIENT_SECRET'),
   githubOAuthCallbackUrl:
-    process.env.GITHUB_OAUTH_CALLBACK_URL ||
+    readEnv('GITHUB_OAUTH_CALLBACK_URL') ||
     'http://localhost:4000/api/auth/github/callback',
-  nodeEnv: process.env.NODE_ENV || 'development',
-  port: Number(process.env.PORT || 4000),
-  smtpHost: process.env.SMTP_HOST || '',
-  smtpPass: process.env.SMTP_PASS || '',
-  smtpPort: Number(process.env.SMTP_PORT || 587),
-  smtpSecure: process.env.SMTP_SECURE === 'true',
-  smtpUser: process.env.SMTP_USER || '',
+  nodeEnv: readEnv('NODE_ENV', 'development'),
+  port: Number(readEnv('PORT', '4000')),
+  smtpHost: readEnv('SMTP_HOST'),
+  smtpPass: readEnv('SMTP_PASS'),
+  smtpPort: Number(readEnv('SMTP_PORT', '587')),
+  smtpSecure: readBooleanEnv('SMTP_SECURE'),
+  smtpUser: readEnv('SMTP_USER'),
 }
 
 module.exports = { env }

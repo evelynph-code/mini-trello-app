@@ -9,9 +9,12 @@ const createTransport = () =>
       pass: env.smtpPass,
       user: env.smtpUser,
     },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
     host: env.smtpHost,
     port: env.smtpPort,
     secure: env.smtpSecure,
+    socketTimeout: 15000,
   })
 
 const escapeHtml = (value) =>
