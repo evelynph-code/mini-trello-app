@@ -11,6 +11,7 @@ const createTransport = () =>
     },
     connectionTimeout: 10000,
     greetingTimeout: 10000,
+    family: 4,
     host: env.smtpHost,
     port: env.smtpPort,
     secure: env.smtpSecure,

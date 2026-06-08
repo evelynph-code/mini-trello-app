@@ -301,6 +301,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
 }
 
 .loading-spinner {
