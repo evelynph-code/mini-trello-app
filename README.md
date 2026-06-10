@@ -2,6 +2,61 @@
 
 A full-stack Trello-style board app with a React/Vite frontend and an Express/Firebase backend. Users can sign in, create boards, invite board members, manage access, create cards, track tasks, leave comments, and receive notifications.
 
+## Live Features
+
+- GitHub OAuth login and local email/password accounts.
+- Email verification gate for local accounts before users can access boards.
+- Multi-board workspace with board creation, renaming, deletion, default boards, and board switching.
+- Board membership management with owner-only invite, remove-member, leave-board, and shared-board flows.
+- Card/list workflow with list creation, renaming, deletion, drag ordering, and card CRUD.
+- Task management inside cards with assignees, reviewers, priorities, statuses, deadlines, and completion tracking.
+- Card discussion area with comments and activity history.
+- In-app notifications for invitations, task assignments, review requests, comments, due-soon tasks, and board activity.
+- Realtime board, task, comment, and activity refreshes through Socket.IO rooms.
+- Profile/settings page for display name, role, public handle, email verification status, sign out, and account deletion.
+- Account deletion cleanup for owned tasks, owned boards, nested cards, comments, activities, sessions, and user profile data.
+
+## Tech Stack
+
+### Frontend
+
+- **React 19** - component-based UI for the board, cards, tasks, settings, notifications, and authentication screens.
+- **Vite 8** - fast local development server and production bundling for the React client.
+- **React Router 7** - browser routing for the dashboard, settings page, verification gate, and fallback navigation.
+- **React DnD + HTML5 backend** - drag-and-drop card and list ordering with browser-native pointer behavior.
+- **Socket.IO Client** - realtime board/task/card-detail updates from the backend.
+- **Lucide React** - consistent icon set for navigation, buttons, status indicators, settings, and notifications.
+- **Plain CSS modules by feature folder** - lightweight styling split across board, landing, settings, task, activity, and dialog files without adding a UI framework.
+
+### Backend
+
+- **Node.js + Express 5** - HTTP API for authentication, boards, cards, tasks, comments, users, invitations, and notifications.
+- **Firebase Admin SDK** - trusted server-side access to Firestore using a service account.
+- **Cloud Firestore** - document database for users, sessions, boards, cards, tasks, comments, activities, invitations, OAuth state, and notifications.
+- **Socket.IO** - realtime event rooms for board-level changes and card/task detail updates.
+- **Nodemailer** - SMTP-based local-account verification emails.
+- **dotenv** - local environment configuration for API origins, OAuth, Firebase, cookie, and email settings.
+- **CORS middleware** - credentialed cross-origin requests between the Vercel frontend and Render backend.
+
+## External Services and APIs
+
+- **GitHub OAuth** - handles "Continue with GitHub" sign-in. The backend calls GitHub's OAuth token endpoint and user API to create/update GitHub-backed users.
+- **Firebase / Firestore** - stores application data and supports collection-group cleanup queries for account deletion.
+- **SMTP email provider** - sends 6-digit email verification codes for local accounts through Nodemailer.
+- **Render** - hosts the Express and Socket.IO backend.
+- **Vercel** - hosts the React/Vite frontend.
+
+## Why These Choices
+
+- **React + Vite** keeps the client fast to develop while staying simple enough for a project-management UI with many small interactive surfaces.
+- **Express** is a direct fit for a REST-style API and keeps controller, service, repository, and middleware layers easy to reason about.
+- **Firestore** works well for nested board data, realtime-friendly documents, server-side batch cleanup, and simple user/session storage without operating a separate database server.
+- **Socket.IO** provides reliable realtime updates with rooms, which maps cleanly to board rooms and card/task rooms.
+- **Cookie-based sessions** keep authentication state server-owned and allow both GitHub OAuth users and local users to share the same authorization flow.
+- **React DnD** avoids hand-rolling drag-and-drop behavior for cards and lists.
+- **Nodemailer** gives a simple provider-agnostic email layer, so SMTP credentials can be swapped without changing the verification flow.
+- **Vercel + Render** split static frontend hosting from the long-running backend needed for API routes, cookies, and Socket.IO.
+
 ## Project Structure
 
 ```text
