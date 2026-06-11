@@ -888,6 +888,262 @@ textarea {
   }
 }
 
+@media (max-width: 560px) {
+  body {
+    min-width: 320px;
+  }
+
+  button,
+  .side-nav a,
+  .side-nav button,
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  button,
+  .side-nav a,
+  .side-nav button {
+    padding: 10px 12px;
+  }
+
+  .app-shell {
+    background:
+      radial-gradient(circle at 50% 0%, rgba(158, 231, 255, 0.28), transparent 18rem),
+      linear-gradient(180deg, #0f4c81 0%, #145f9f 38%, #dceeff 100%);
+  }
+
+  .topbar {
+    gap: 12px;
+    min-height: auto;
+    padding: 12px;
+  }
+
+  .topbar h1 {
+    font-size: 24px;
+    line-height: 1.05;
+  }
+
+  .side-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+  }
+
+  .auth-panel {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .signed-in-user {
+    min-width: 0;
+  }
+
+  .signed-in-user > div {
+    min-width: 0;
+  }
+
+  .signed-in-user strong,
+  .signed-in-user p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .notification-popover {
+    position: fixed;
+    top: 82px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-height: calc(100svh - 108px);
+    overflow-y: auto;
+  }
+
+  .notification-actions button {
+    flex: 1 1 130px;
+  }
+
+  .dashboard-shell,
+  .settings-page {
+    padding: 14px 10px 24px;
+  }
+
+  .landing-nav {
+    padding: 16px;
+  }
+
+  .landing-hero {
+    gap: 22px;
+    padding: 14px 16px 28px;
+  }
+
+  .landing-copy {
+    gap: 14px;
+  }
+
+  .landing-copy h1 {
+    font-size: 44px;
+    line-height: 1;
+  }
+
+  .landing-copy > p:not(.eyebrow):not(.landing-error) {
+    font-size: 16px;
+  }
+
+  .landing-actions,
+  .landing-actions button,
+  .landing-auth-card > button {
+    width: 100%;
+  }
+
+  .landing-auth-card {
+    max-width: none;
+    padding: 12px;
+  }
+
+  .auth-mode-tabs {
+    gap: 8px;
+  }
+
+  .preview-list {
+    min-height: 120px;
+  }
+
+  .board-switcher,
+  .board-workspace,
+  .settings-panel {
+    padding: 12px;
+  }
+
+  .panel-heading,
+  .board-header,
+  .owner-tools-header,
+  .shared-tool-actions,
+  .board-access-list > div {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .panel-heading span {
+    justify-self: start;
+    width: fit-content;
+  }
+
+  .board-create-form,
+  .board-member-form,
+  .board-rename-form,
+  .list-create-form,
+  .card-composer-panel,
+  .task-form,
+  .task-review-controls,
+  .user-setting-form {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .list-create-form input,
+  .list-create-form button,
+  .board-create-form button,
+  .board-member-form button,
+  .board-rename-form button,
+  .owner-tool-actions button,
+  .shared-tool-actions button,
+  .form-actions button,
+  .card-actions button,
+  .task-board-actions button,
+  .user-setting-form button,
+  .user-setting-value button {
+    width: 100%;
+  }
+
+  .board-header-actions,
+  .owner-tool-actions,
+  .shared-tool-actions,
+  .form-actions,
+  .card-actions,
+  .task-board-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-content: stretch;
+  }
+
+  .board-workspace {
+    min-height: auto;
+  }
+
+  .list-board {
+    display: flex;
+    gap: 12px;
+    min-height: 0;
+    margin-right: -12px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding: 2px 12px 12px 0;
+    scroll-snap-type: x mandatory;
+  }
+
+  .list-column {
+    flex: 0 0 min(86vw, 360px);
+    scroll-snap-align: start;
+  }
+
+  .board-task-card {
+    min-height: 86px;
+  }
+
+  .task-board,
+  .comment-activity-panel {
+    margin-left: 0;
+    margin-right: 0;
+    padding: 12px;
+  }
+
+  .task-list {
+    grid-template-columns: 1fr;
+  }
+
+  .task-item-header,
+  .task-badges {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .task-badges {
+    flex: 1 1 auto;
+    justify-content: flex-start;
+  }
+
+  .user-setting-value {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .user-setting-value strong,
+  .user-setting-value code {
+    overflow-wrap: anywhere;
+  }
+
+  .verification-page {
+    padding: 14px;
+  }
+
+  .verification-panel {
+    padding: 18px;
+  }
+
+  .verification-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
