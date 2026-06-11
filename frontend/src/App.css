@@ -1091,19 +1091,17 @@ textarea {
   }
 
   .list-board {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr;
     gap: 12px;
     min-height: 0;
-    margin-right: -12px;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    padding: 2px 12px 12px 0;
-    scroll-snap-type: x mandatory;
+    margin-right: 0;
+    overflow-x: visible;
+    padding: 0;
   }
 
   .list-column {
-    flex: 0 0 min(86vw, 360px);
-    scroll-snap-align: start;
+    width: 100%;
   }
 
   .board-task-card {
