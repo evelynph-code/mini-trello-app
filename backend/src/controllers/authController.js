@@ -52,12 +52,16 @@ const validateLocalAuthInput = (body, mode) => {
       return { error: 'Display name is required and must be 60 characters or fewer.' }
     }
 
+    if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(name)) {
+      return { error: 'Display name can only contain letters and spaces.' }
+    }
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return { error: 'A valid email is required.' }
     }
 
-    if (!/^[a-zA-Z0-9_-]{3,24}$/.test(username)) {
-      return { error: 'Username must be 3-24 letters, numbers, underscores, or dashes.' }
+    if (!/^[a-z0-9_-]{3,24}$/.test(username)) {
+      return { error: 'Username must be 3-24 lowercase letters, numbers, underscores, or dashes.' }
     }
   } else if (!identifier) {
     return { error: 'Handle or email is required.' }
@@ -155,6 +159,10 @@ const updateCurrentUser = async (req, res, next) => {
 
   if (name.length > 60) {
     return res.status(400).json({ error: 'Display name must be 60 characters or fewer.' })
+  }
+
+  if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(name)) {
+    return res.status(400).json({ error: 'Display name can only contain letters and spaces.' })
   }
 
   try {

@@ -14,6 +14,10 @@ const validateUserInput = (body) => {
       return { error: 'Display name must be 60 characters or fewer.' }
     }
 
+    if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(name)) {
+      return { error: 'Display name can only contain letters and spaces.' }
+    }
+
     userInput.name = name
   }
 

@@ -3,6 +3,12 @@ import { useState } from 'react'
 import { usersApi } from '../../services/usersApi'
 import { IconButton } from '../Cards/IconButton'
 
+const sanitizeDisplayName = (value) =>
+  value
+    .replace(/[^A-Za-z ]/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/^\s+/, '')
+
 export function UserSettingsList({
   currentUser,
   onDeleteAccount,
@@ -49,6 +55,11 @@ export function UserSettingsList({
 
     if (!name) {
       setError('Display name is required.')
+      return
+    }
+
+    if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(name)) {
+      setError('Display name can only contain letters and spaces.')
       return
     }
 
@@ -146,7 +157,7 @@ export function UserSettingsList({
               autoFocus
               maxLength={60}
               value={displayName}
-              onChange={(event) => setDisplayName(event.target.value)}
+              onChange={(event) => setDisplayName(sanitizeDisplayName(event.target.value))}
             />
             <button type="submit" disabled={isSaving}>
               <Save size={15} />

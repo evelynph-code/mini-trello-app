@@ -10,6 +10,14 @@ const emptyForm = {
   username: '',
 }
 
+const sanitizeDisplayName = (value) =>
+  value
+    .replace(/[^A-Za-z ]/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/^\s+/, '')
+
+const sanitizeUsername = (value) => value.toLowerCase().replace(/[^a-z0-9_-]/g, '')
+
 export function LandingPage({ authError, isLoading, onAuthSuccess, onSignIn }) {
   const [authMode, setAuthMode] = useState('login')
   const [form, setForm] = useState(emptyForm)
@@ -17,9 +25,17 @@ export function LandingPage({ authError, isLoading, onAuthSuccess, onSignIn }) {
   const [verificationMessage, setVerificationMessage] = useState('')
 
   const handleChange = (event) => {
+    const { name, value } = event.target
+    const nextValue =
+      name === 'name'
+        ? sanitizeDisplayName(value)
+        : name === 'username'
+          ? sanitizeUsername(value)
+          : value
+
     setForm((currentForm) => ({
       ...currentForm,
-      [event.target.name]: event.target.value,
+      [name]: nextValue,
     }))
   }
 
@@ -109,6 +125,7 @@ export function LandingPage({ authError, isLoading, onAuthSuccess, onSignIn }) {
               <>
                 <input
                   aria-label="Display name"
+                  autoComplete="name"
                   name="name"
                   placeholder="Display name"
                   value={form.name}
@@ -116,6 +133,8 @@ export function LandingPage({ authError, isLoading, onAuthSuccess, onSignIn }) {
                 />
                 <input
                   aria-label="Username"
+                  autoCapitalize="none"
+                  autoComplete="username"
                   name="username"
                   placeholder="Username"
                   value={form.username}
@@ -133,6 +152,8 @@ export function LandingPage({ authError, isLoading, onAuthSuccess, onSignIn }) {
             ) : (
               <input
                 aria-label="Handle or email"
+                autoCapitalize="none"
+                autoComplete="username"
                 name="identifier"
                 placeholder="Handle or email"
                 value={form.identifier}
@@ -142,6 +163,7 @@ export function LandingPage({ authError, isLoading, onAuthSuccess, onSignIn }) {
 
             <input
               aria-label="Password"
+              autoComplete={authMode === 'register' ? 'new-password' : 'current-password'}
               name="password"
               placeholder="Password"
               type="password"
