@@ -833,11 +833,15 @@ textarea {
     grid-template-columns: 1fr;
   }
 
-  .auth-panel,
   .board-list article,
   .user-setting-row {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .auth-panel {
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
   .user-setting-value {
@@ -935,14 +939,22 @@ textarea {
   }
 
   .auth-panel {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    display: flex;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
     gap: 8px;
     align-items: center;
+    width: 100%;
   }
 
   .signed-in-user {
+    flex: 1 1 auto;
     min-width: 0;
+  }
+
+  .notification-menu,
+  .auth-panel > .topbar-icon-button {
+    flex: 0 0 auto;
   }
 
   .signed-in-user > div {

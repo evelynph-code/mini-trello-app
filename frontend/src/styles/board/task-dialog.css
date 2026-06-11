@@ -29,10 +29,9 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
-  justify-content: space-between;
-  flex-wrap: wrap;
   gap: 16px;
   border-radius: 8px 8px 0 0;
   background: linear-gradient(135deg, #0f4c81 0%, #1672b9 100%);
@@ -51,8 +50,7 @@
 .card-details-header > div {
   display: grid;
   gap: 6px;
-  min-width: min(100%, 320px);
-  flex: 1 1 420px;
+  min-width: 0;
 }
 
 .card-details-header p:not(.eyebrow) {
@@ -62,7 +60,7 @@
 }
 
 .card-details-header .icon-button {
-  flex: 0 0 auto;
+  justify-self: end;
   border-color: rgba(255, 255, 255, 0.28);
   background: rgba(255, 255, 255, 0.14);
   color: #ffffff;
@@ -113,6 +111,7 @@
   }
 
   .card-details-header {
+    grid-template-columns: minmax(0, 1fr) 44px;
     align-items: start;
     border-radius: 0;
     gap: 12px;
@@ -120,7 +119,6 @@
   }
 
   .card-details-header > div {
-    flex-basis: calc(100% - 58px);
     min-width: 0;
   }
 
@@ -129,15 +127,23 @@
   }
 
   .card-details-header .icon-button {
-    flex: 0 0 44px;
     width: 44px;
     min-width: 44px;
     min-height: 44px;
-    margin-left: auto;
   }
 
   .card-details > dl {
     grid-template-columns: 1fr;
     margin: 12px;
+  }
+}
+
+@media (max-width: 380px) {
+  .card-details-header {
+    grid-template-columns: 1fr;
+  }
+
+  .card-details-header .icon-button {
+    justify-self: end;
   }
 }
