@@ -1,7 +1,11 @@
+.has-task-card-open {
+  overflow: hidden;
+}
+
 .task-card-screen {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 500;
   display: grid;
   place-items: center;
   background: rgba(6, 22, 44, 0.48);
@@ -22,6 +26,9 @@
 }
 
 .card-details-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   align-items: start;
   justify-content: space-between;
@@ -82,4 +89,43 @@
   margin: 0;
   color: var(--text-strong);
   font-weight: 700;
+}
+
+@media (max-width: 560px) {
+  .task-card-screen {
+    place-items: stretch;
+    background: #f7fbff;
+    padding: 0;
+  }
+
+  .card-details {
+    width: 100%;
+    max-height: 100svh;
+    min-height: 100svh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .card-details-header {
+    align-items: start;
+    border-radius: 0;
+    padding: 16px;
+  }
+
+  .card-details h3 {
+    font-size: 22px;
+  }
+
+  .card-details-header .icon-button {
+    flex: 0 0 44px;
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .card-details > dl {
+    grid-template-columns: 1fr;
+    margin: 12px;
+  }
 }

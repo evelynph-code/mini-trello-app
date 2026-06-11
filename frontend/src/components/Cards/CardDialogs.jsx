@@ -1,9 +1,20 @@
 import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
+import { useEffect } from 'react'
 import { CommentActivityPanel } from '../Tasks/CommentActivityPanel'
 import { TaskBoard } from '../Tasks/TaskBoard'
 import { IconButton } from './IconButton'
 import { getListName } from '../../utils/cardUtils'
+
+function useTaskCardScreenLock() {
+  useEffect(() => {
+    document.body.classList.add('has-task-card-open')
+
+    return () => {
+      document.body.classList.remove('has-task-card-open')
+    }
+  }, [])
+}
 
 export function CardDetailsDialog({
   card,
@@ -13,6 +24,8 @@ export function CardDetailsDialog({
   onTasksChange,
   selectedBoard,
 }) {
+  useTaskCardScreenLock()
+
   return createPortal(
     <div
       className="task-card-screen"
@@ -75,6 +88,8 @@ export function EditCardDialog({
   onSubmit,
   selectedBoard,
 }) {
+  useTaskCardScreenLock()
+
   return createPortal(
     <div
       className="task-card-screen"
